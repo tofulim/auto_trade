@@ -83,8 +83,7 @@ target/
 *.ipynb
 
 # config
-.config
-.config/
+config
 
 # IPython
 profile_default/
