@@ -54,9 +54,6 @@ cover/
 # env & config
 .config/
 
-# notebook
-.ipynb_checkpoints/
-
 # Translations
 *.mo
 *.pot
@@ -82,7 +79,10 @@ docs/_build/
 target/
 
 # Jupyter Notebook
-.ipynb_checkpoints
+.ipynb_checkpoints/*
+
+# config
+.config/
 
 # IPython
 profile_default/
