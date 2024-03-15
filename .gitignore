@@ -79,10 +79,10 @@ docs/_build/
 target/
 
 # Jupyter Notebook
-.ipynb_checkpoints/*
+.ipynb_checkpoints
 
 # config
-.config/
+.config
 
 # IPython
 profile_default/
@@ -126,6 +126,8 @@ celerybeat.pid
 *.sage.py
 
 # Environments
+.config
+.config/
 .env
 .venv
 env/
