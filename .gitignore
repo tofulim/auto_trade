@@ -84,7 +84,7 @@ target/
 
 # config
 .config
-
+.config/
 
 # IPython
 profile_default/
