@@ -1,5 +1,6 @@
 import json
 import os
+import pandas as pd
 import requests
 import dotenv
 
@@ -25,6 +26,8 @@ class Trader:
         self.headers = {"content-type": "application/json"}
 
         self.access_token = None
+
+        self.portfolio_path = os.getenv("PORTFOLIO_PATH")
 
     @staticmethod
     def get_port_by_mode(mode: str):
@@ -96,26 +99,29 @@ class Trader:
     def set_credential_access_token(self, access_token: str):
         self.access_token = access_token
 
-    def buy_stock(self, stock_code: str, ord_type: str, ord_num: str, ord_price: str):
-        api = "uapi/domestic-stock/v1/trading/order-cash"
 
-        # 시장가로 구매할 경우 주문단가가 의미없음.
-        if ord_type == "01":
-            ord_price = "0"
+    # 종가 기준으로 지정가 구매. 해당 stock의 accum
+    def buy_stock(self, stock_code: str, ord_qty: int, ord_price: str):
+        api = "uapi/domestic-stock/v1/trading/order-cash"
 
         data = {
             # 계좌번호
             "CANO": os.getenv("ACCOUNT_FRONT"),
             "ACNT_PRDT_CD": os.getenv("ACCOUNT_REAR"),
             # 종목번호
-            "PDNO": "005930",
-            # 주문구분
-            "ORD_DVSN": "01",
+            "PDNO": stock_code,
+            # 주문구분 - 지정가(00), 시장가(01)
+            "ORD_DVSN": "00",
             # 주문 수량
-            "ORD_QTY": "10",
+            "ORD_QTY": ord_qty,
             # 주문 단가
-            "ORD_UNPR": "0",
+            "ORD_UNPR": ord_price,
         }
+
+    # (code, country, ratio, accum_assets) csv 파일을 읽어 반환한다.
+    def get_portfolio(self):
+        portfolio_df = pd.read_csv(self.portfolio_path)
+        return portfolio_df
 
 
 if __name__ == "__main__":
