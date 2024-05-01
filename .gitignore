@@ -4,6 +4,9 @@ __pycache__/
 *$py.class
 
 test.py
+# prophet_result
+prophet_result/
+
 # C extensions
 *.so
 
