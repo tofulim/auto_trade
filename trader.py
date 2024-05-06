@@ -48,15 +48,20 @@ class Trader:
             "appsecret": self.app_secret,
         }
 
-        response = requests.post(
-            url=f"{self.url_base}:{self.port}/{api}",
-            headers=self.headers,
-            data=json.dumps(body),
-        )
-        print(f"response: {response.json()}")
-        self.access_token = response.json()["access_token"]
+        try:
+            response = requests.post(
+                url=f"{self.url_base}:{self.port}/{api}",
+                headers=self.headers,
+                data=json.dumps(body),
+            )
+            if response.status_code != 200:
+                raise Exception(f"Failed to get access token it was already generated.")
+            else:
+                self.access_token = response.json()["access_token"]
+        except Exception:
+            return self.access_token
 
-        return 200
+        return self.access_token
 
     def hashkey(self, datas: dict):
         """
@@ -212,9 +217,9 @@ class Trader:
                 "error": error,
             }
 
-    def cancel_buy_request(self, ord_orgno: str, orgn_odno: int):
+    def cancel_request(self, ord_orgno: str, orgn_odno: str):
         """
-        주문당시의 영업점코드와 주문번호를 활용해 요청한 매입 주문을 취소한다.
+        주문당시의 영업점코드와 주문번호를 활용해 요청한 매입/매도 주문을 취소한다.
         status_code와 에러를 반환한다.
 
         Args:
