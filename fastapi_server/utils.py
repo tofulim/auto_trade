@@ -1,4 +1,35 @@
+import importlib
+import os
 import logging
+import uvicorn
+
+from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
+
+
+class FastAPIServer:
+    def __init__(self):
+        self.app = FastAPI(
+            title="Auto Trade",
+        )
+        self.app.add_middleware(
+            CORSMiddleware,
+            allow_origins=[org.strip() for org in os.getenv("CORS_ORIGINS", "").split(",")],
+            allow_credentials=False,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
+        @self.app.get("/")
+        async def index():
+            return "AutoTrade API running ..."
+
+        @self.app.get("/health")
+        async def health():
+            return {"code": 200}
+
+    def run(self):
+        uvicorn.run(self.app, host="0.0.0.0", port=int(os.getenv("FASTAPI_SERVER_PORT")))
 
 
 class Inform(logging.Logger):
@@ -24,3 +55,7 @@ def initialize_api_logger():
     )
     handler.setFormatter(formatter)
     api_logger.addHandler(handler)
+
+
+def get_controllers(modules):
+    return [importlib.import_module(module_name) for module_name in modules]
