@@ -6,6 +6,8 @@
 - 증감이 0.5% 이상이면 매수, 0.5% 이하이면 매도를 진행한다.
 """
 import os
+from typing import List
+
 import yfinance as yf
 import pandas as pd
 from prophet import Prophet
@@ -21,12 +23,12 @@ class ProphetModel:
         self.model = Prophet()
         self.periods = int(os.getenv("PERIOD_DAYS"))
 
-    def __call__(self, portfolio: pd.DataFrame, start_date: str, end_date: str, save_plot: bool = True):
+    def __call__(self, stock_rows: List[dict], start_date: str, end_date: str, save_plot: bool = True):
         """
         주식 데이터를 불러와서 Prophet 모델을 학습시킨다.
 
         Args:
-            portfolio (pd.DataFrame): 포트폴리오 데이터
+            stock_rows (List[dict]): db 포트폴리오 데이터
             start_date (str): 사용할 시작 날짜 ex. '2021-01-01'
             end_date (str): 사용할 종료 날짜 ex. '2021-12-31'
 
@@ -34,7 +36,7 @@ class ProphetModel:
             prophecies (dict): 종가 경향 변화율 예측 결과를 담은 dict (key: 종목명, value: 변화율)
         """
         prophecies = {}
-        for _, stock_row in portfolio.iterrows():
+        for stock_row in stock_rows:
             if stock_row["country"] != "us":
                 # 한국 주식의 경우 종목코드 뒤에 .KS를 붙여준다.
                 stock_symbol = f"{stock_row['stock_symbol']}.{stock_row['country'].upper()}"
@@ -108,6 +110,8 @@ if __name__ == "__main__":
     import dotenv
     dotenv.load_dotenv(f"./config/prod.env")
     pf = ProphetModel()
-    portfolio = pd.read_csv("./data/portfolio.csv")
-    cr = pf(portfolio, '2021-01-01', datetime.today().strftime('%Y-%m-%d'))
+
+    stock_rows = [{'country': 'ks', 'accum_asset': 5000.0, 'stock_symbol': '453810', 'id': 1, 'ratio': 0.3}]
+
+    cr = pf(stock_rows, '2021-01-01', datetime.today().strftime('%Y-%m-%d'))
     print(f"종가 변화율 예측 결과: {cr}")
