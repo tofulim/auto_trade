@@ -5,3 +5,4 @@ statsmodels==0.14.1
 fastapi==0.111.0
 uvicorn==0.29.0
 inject==5.2.1
+sqlmodel==0.0.18
