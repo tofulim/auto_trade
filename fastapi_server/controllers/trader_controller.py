@@ -4,7 +4,8 @@ import inject
 from datetime import datetime
 from fastapi import APIRouter, Request
 
-from database.database import Database, PortfolioRepositoryService
+from fastapi_server.database.database import Database
+from fastapi_server.repository.portfolio_repository_service import PortfolioRepositoryService
 from prophecy import ProphetModel
 from trader import Trader
 

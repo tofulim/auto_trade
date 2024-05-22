@@ -5,10 +5,9 @@ import inject
 
 from fastapi import APIRouter
 
-from database.database import Database, PortfolioRepositoryService
-from entity.portfolio import Portfolio, PortfolioBase
-
-
+from fastapi_server.database.database import Database
+from fastapi_server.entity.portfolio import Portfolio, PortfolioBase
+from fastapi_server.repository.portfolio_repository_service import PortfolioRepositoryService
 
 router = APIRouter(
     prefix="/v1/portfolio",
