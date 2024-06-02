@@ -130,6 +130,8 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+.ipynb_checkpoints/
+
 # Environments
 .config
 .config/
