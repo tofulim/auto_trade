@@ -32,7 +32,10 @@ def create_portfolio(portfolio: PortfolioBase):
 
 @router.get("/get/{stock_symbol}")
 def read_portfolio(stock_symbol: str):
-    portfolio = portfolio_repository_service.get(stock_symbol=stock_symbol)
+    if stock_symbol == "all":
+        portfolio = portfolio_repository_service.get_all()
+    else:
+        portfolio = portfolio_repository_service.get(stock_symbol=stock_symbol)
     if portfolio is None:
         raise HTTPException(status_code=404, detail="Portfolio not found")
     return portfolio

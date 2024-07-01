@@ -48,7 +48,7 @@ async def buy(request: Request, stock_symbol: str, ord_qty: int, ord_price: int)
     res = trader.buy_stock(
         stock_code=stock_symbol,
         ord_qty=str(ord_qty),
-        ord_price=str(ord_price)
+        ord_price=str(ord_price),
     )
 
     logger.inform(
@@ -84,6 +84,18 @@ async def sell(request: Request, stock_symbol: str, ord_qty: int, ord_price: int
 
     logger.inform(
         f"Sell stock {stock_symbol} {ord_qty} {ord_price} | Status {res['status_code']} | Error {res['error']}",
+        extra={"endpoint_name": request.url.path}
+    )
+
+    return res
+
+
+@router.post("/get_balance")
+async def sell(request: Request):
+    res = trader.get_balance()
+
+    logger.inform(
+        f"Current Assset is {res['output']} | Status {res['status_code']} | Error {res['error']}",
         extra={"endpoint_name": request.url.path}
     )
 
