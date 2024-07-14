@@ -354,11 +354,10 @@ if __name__ == "__main__":
         mode=mode,
     )
     #
-    # res = trader.get_credential_access_token()
+    res = trader.get_credential_access_token()
 
-    # print(f"res : {res}")
-    token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0b2tlbiIsImF1ZCI6ImY2MjkwZWUxLTJmZTctNDY3Yy1iMjVlLTUyNDdhNjk5MjA0OSIsInByZHRfY2QiOiIiLCJpc3MiOiJ1bm9ndyIsImV4cCI6MTcxNzM4MTUwNiwiaWF0IjoxNzE3Mjk1MTA2LCJqdGkiOiJQUzJ3NXAwYkZKZm00bnNQRFNTR2dGNW8xUzY0TzBoOVVmeFgifQ.9O_3ZroQdOuOm0lWzQM7LAdhEiIBy9ylDvkhKoa-vamwoISVbpAE4fU0VPsguSsDbl3VlMJmWtQt_FxF62NdHQ"
-    trader.set_credential_access_token(token)
+    print(f"res : {res}")
+    # trader.set_credential_access_token(token)
 
     res = trader.inquire_balance()
     #

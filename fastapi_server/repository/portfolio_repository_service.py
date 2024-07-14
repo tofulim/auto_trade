@@ -52,7 +52,8 @@ class PortfolioRepositoryService:
             result.stock_symbol = portfolio.stock_symbol
             result.country = portfolio.country
             result.ratio = portfolio.ratio
-            result.accum_asset = portfolio.accum_asset
+            result.month_purchase_flag = portfolio.month_purchase_flag
+            result.updated_at = portfolio.updated_at
             # session.add(result)
             session.commit()
 
