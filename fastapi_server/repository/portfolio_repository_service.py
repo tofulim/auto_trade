@@ -60,7 +60,10 @@ class PortfolioRepositoryService:
     @staticmethod
     def _dump_models(models):
         if len(models) > 0:
-            return [model.model_dump() for model in models]
+            # pydantic v>=2.7
+            # return [model.model_dump() for model in models]
+            # pydantic v<2.7
+            return [model.dict() for model in models]
         else:
             return []
 
