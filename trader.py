@@ -326,7 +326,10 @@ class Trader:
     def get_balance(self):
         response_json = self.inquire_balance()
         # 참조: https://apiportal.koreainvestment.com/apiservice/apiservice-domestic-stock-order#L_66c61080-674f-4c91-a0cc-db5e64e9a5e6
-        response_json["output"] = response_json["output"]["output2"][0]["dnca_tot_amt"]
+        response_json["output"] = {
+            "dnca_tot_amt": response_json["output"]["output2"][0]["dnca_tot_amt"],
+            "prvs_rcdl_excc_amt": response_json["output"]["output2"][0]["prvs_rcdl_excc_amt"]
+        }
 
         return response_json
 
@@ -354,10 +357,11 @@ if __name__ == "__main__":
         mode=mode,
     )
     #
-    res = trader.get_credential_access_token()
+    # res = trader.get_credential_access_token()
 
-    print(f"res : {res}")
-    # trader.set_credential_access_token(token)
+    # print(f"res : {res}")
+    token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0b2tlbiIsImF1ZCI6ImQyYzIzMTlmLTJmY2QtNGIxZS04NDQ3LWU3OWI5ZGUyOTRlNCIsInByZHRfY2QiOiIiLCJpc3MiOiJ1bm9ndyIsImV4cCI6MTcyMTA0NTIxMywiaWF0IjoxNzIwOTU4ODEzLCJqdGkiOiJQUzNkbHA1SEFBREQwU0Z6cEFLMVdMdHkzdUtFdzJRVk5SSHAifQ.Pq9QiY0UORMIgDgR0U6FNpTXJPidsjw3xbNkJZRRGQIEhqV5QD4t1lOBD0mSWUE5H8fiXdDkjyh5e3_ZHjaNOg"
+    trader.set_credential_access_token(token)
 
     res = trader.inquire_balance()
     #
@@ -367,3 +371,4 @@ if __name__ == "__main__":
     #     ord_price=13600
     # )
     print(res)
+    print(res["output"]["output2"])
