@@ -1,4 +1,4 @@
-AIRFLOW_VERSION=2.7.0
+AIRFLOW_VERSION=2.7.1
 export AIRFLOW_HOME=$(pwd)/airflow
 # Extract the version of Python you have installed. If you're currently using a Python version that is not supported by Airflow, you may want to set this manually.
 # See above for supported versions.
