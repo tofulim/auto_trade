@@ -1,6 +1,5 @@
 import json
 import os
-import pandas as pd
 import requests
 import dotenv
 
@@ -28,10 +27,7 @@ class Trader:
         self.url_base = url_base
 
         self.headers = {"content-type": "application/json"}
-
-        self.access_token = None
-
-        self.portfolio_path = os.getenv("PORTFOLIO_PATH")
+        self.access_token = os.getenv("KIS_ACCESS_TOKEN", None)
 
     def get_credential_access_token(self):
         """
@@ -94,6 +90,7 @@ class Trader:
     # 이미 token을 발급받은 경우 토큰을 해당 토큰으로 설정한다.
     def set_credential_access_token(self, access_token: str):
         self.access_token = access_token
+        os.environ["KIS_ACCESS_TOKEN"] = access_token
 
     def buy_stock(self, stock_code: str, ord_qty: int, ord_price: int):
         """
@@ -188,15 +185,24 @@ class Trader:
 
         return self._request(api, data, headers)
 
-    def _request(self, api: str, data: dict, headers: dict):
-        output, error = {}, None
+    def _request(self, api: str, data: dict, headers: dict, method: str = "POST"):
+        status_code, output, error = "500", {}, None
         # 클라이언트 에러 핸들링 (파라미터 오기입, 장미운영날 주문 등)
         try:
-            response = requests.post(
-                url=f"{self.url_base}:{self.port}/{api}",
-                headers=headers,
-                data=json.dumps(data)
-            )
+            if method == "POST":
+                response = requests.post(
+                    url=f"{self.url_base}:{self.port}/{api}",
+                    headers=headers,
+                    data=json.dumps(data)
+                )
+            # GET
+            else:
+                response = requests.get(
+                    url=f"{self.url_base}:{self.port}/{api}",
+                    headers=headers,
+                    params=data
+                )
+
             status_code = str(response.status_code)
             response_json = response.json()
 
@@ -205,7 +211,9 @@ class Trader:
                 status_code = "4xx"
                 error = f"{response_json['msg_cd']}: {response_json['msg1']}"
             else:
-                output = response_json["output"]
+                output = response_json.get("output", None)
+                if output is None:
+                    output = response_json
         # 서버 에러 핸들링 (토큰 만료 등)
         except Exception as e:
             status_code = "5xx"
@@ -267,10 +275,63 @@ class Trader:
 
         return self._request(api, data, headers)
 
-    # (code, country, ratio, accum_assets) csv 파일을 읽어 반환한다.
-    def get_portfolio(self):
-        portfolio_df = pd.read_csv(self.portfolio_path)
-        return portfolio_df
+    def inquire_balance(self):
+        """
+        주식 잔고조회
+        예수금 잔액을 확인하거나 주식 수익을 확인할 수 있다.
+
+        Returns:
+            status_code (str): 상태 코드, (200 | 4xx | 5xx)
+            output (dict): 주문 결과 KRX_FWDG_ORD_ORGNO(한국거래소 전송주문조직번호), ORNO(주문번호), ORD_TMD(주문시간)을 갖는다.
+            error (str): 에러
+
+        """
+        tr_id = os.getenv("INQ_BAL_TR_ID")
+        api = "uapi/domestic-stock/v1/trading/inquire-balance"
+
+        data = {
+            # 계좌번호
+            "CANO": os.getenv("ACCOUNT_FRONT"),
+            "ACNT_PRDT_CD": os.getenv("ACCOUNT_REAR"),
+            # 시간외단일가여부
+            "AFHR_FLPR_YN": "N",
+            # 오프라인여부
+            "OFL_YN": "",
+            # 조회 구분
+            "INQR_DVSN": "02",
+            # 단가 구분
+            "UNPR_DVSN": "01",
+            "FUND_STTL_ICLD_YN": "N",
+            "FNCG_AMT_AUTO_RDPT_YN": 'N',
+            # 전일 매매 포함 여부
+            "PRCS_DVSN": "00",
+            "CTX_AREA_FK100": "",
+            "CTX_AREA_NK100": "",
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "authorization": f"Bearer {self.access_token}",
+            "appKey": self.app_key,
+            "appSecret": self.app_secret,
+            "tr_id": tr_id,
+            # 개인
+            "custtype": "P",
+            "hashkey": self.hashkey(data)
+        }
+
+        return self._request(api, data, headers, method="GET")
+
+    # inquire_balance는 API response지만 get_balance는 직접 남은 예수금을 가져온다.
+    def get_balance(self):
+        response_json = self.inquire_balance()
+        # 참조: https://apiportal.koreainvestment.com/apiservice/apiservice-domestic-stock-order#L_66c61080-674f-4c91-a0cc-db5e64e9a5e6
+        response_json["output"] = {
+            "dnca_tot_amt": response_json["output"]["output2"][0]["dnca_tot_amt"],
+            "prvs_rcdl_excc_amt": response_json["output"]["output2"][0]["prvs_rcdl_excc_amt"]
+        }
+
+        return response_json
 
 
 if __name__ == "__main__":
@@ -289,22 +350,25 @@ if __name__ == "__main__":
 
     dotenv.load_dotenv(f"./config/{file_name}")
 
-    print(os.getenv("APP_KEY"))
     trader = Trader(
         app_key=os.getenv("APP_KEY"),
         app_secret=os.getenv("APP_SECRET"),
         url_base=os.getenv("BASE_URL"),
         mode=mode,
     )
-
+    #
     # res = trader.get_credential_access_token()
-    #
+
     # print(f"res : {res}")
+    # token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0b2tlbiIsImF1ZCI6ImQyYzIzMTlmLTJmY2QtNGIxZS04NDQ3LWU3OWI5ZGUyOTRlNCIsInByZHRfY2QiOiIiLCJpc3MiOiJ1bm9ndyIsImV4cCI6MTcyMTA0NTIxMywiaWF0IjoxNzIwOTU4ODEzLCJqdGkiOiJQUzNkbHA1SEFBREQwU0Z6cEFLMVdMdHkzdUtFdzJRVk5SSHAifQ.Pq9QiY0UORMIgDgR0U6FNpTXJPidsjw3xbNkJZRRGQIEhqV5QD4t1lOBD0mSWUE5H8fiXdDkjyh5e3_ZHjaNOg"
     # trader.set_credential_access_token(token)
+
+    res = trader.inquire_balance()
     #
-    res = trader.buy_stock(
-        stock_code="453810",
-        ord_qty=1,
-        ord_price=13600
-    )
+    # res = trader.buy_stock(
+    #     stock_code="453810",
+    #     ord_qty=1,
+    #     ord_price=13600
+    # )
     print(res)
+    print(res["output"]["output2"])

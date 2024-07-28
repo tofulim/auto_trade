@@ -4,7 +4,8 @@ import inject
 from datetime import datetime
 from fastapi import APIRouter, Request
 
-from database.database import Database, PortfolioRepositoryService
+from fastapi_server.database.database import Database
+from fastapi_server.repository.portfolio_repository_service import PortfolioRepositoryService
 from prophecy import ProphetModel
 from trader import Trader
 
@@ -30,6 +31,8 @@ async def update_token(request: Request):
 
     logger.inform("Token updated", extra={"endpoint_name": request.url.path})
 
+    return True
+
 
 @router.get("/prophet")
 async def prophet(request: Request):
@@ -47,7 +50,7 @@ async def buy(request: Request, stock_symbol: str, ord_qty: int, ord_price: int)
     res = trader.buy_stock(
         stock_code=stock_symbol,
         ord_qty=str(ord_qty),
-        ord_price=str(ord_price)
+        ord_price=str(ord_price),
     )
 
     logger.inform(
@@ -83,6 +86,18 @@ async def sell(request: Request, stock_symbol: str, ord_qty: int, ord_price: int
 
     logger.inform(
         f"Sell stock {stock_symbol} {ord_qty} {ord_price} | Status {res['status_code']} | Error {res['error']}",
+        extra={"endpoint_name": request.url.path}
+    )
+
+    return res
+
+
+@router.post("/get_balance")
+async def sell(request: Request):
+    res = trader.get_balance()
+
+    logger.inform(
+        f"Current Assset is {res['output']} | Status {res['status_code']} | Error {res['error']}",
         extra={"endpoint_name": request.url.path}
     )
 

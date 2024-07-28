@@ -1,11 +1,13 @@
-from entity.portfolio import Portfolio
-from sqlmodel import Session, create_engine, SQLModel, select
+"""
+Author: zed.ai
+Reviewer:
+2024.05.22
+"""
+from datetime import datetime, timedelta
+from sqlmodel import Session, select
 
-
-class Database:
-    def __init__(self, db_name):
-        self.engine = create_engine(f"sqlite:///{db_name}")
-        SQLModel.metadata.create_all(self.engine)
+from fastapi_server.database.database import Database
+from fastapi_server.entity.portfolio import Portfolio
 
 
 class PortfolioRepositoryService:
@@ -51,20 +53,36 @@ class PortfolioRepositoryService:
             result.stock_symbol = portfolio.stock_symbol
             result.country = portfolio.country
             result.ratio = portfolio.ratio
-            result.accum_asset = portfolio.accum_asset
+            result.month_purchase_flag = portfolio.month_purchase_flag
+            result.updated_at = portfolio.updated_at
             # session.add(result)
+            session.commit()
+
+    def update_fields(self, stock_symbol: str, update_data: dict):
+        with Session(self.db.engine) as session:
+            statement = select(Portfolio).where(Portfolio.stock_symbol == stock_symbol)
+            result = session.exec(statement).one()
+
+            updated_at = datetime.utcnow() + timedelta(hours=9)
+            update_data.update({"updated_at": updated_at})
+            for key, value in update_data.items():
+                setattr(result, key, value)
+
             session.commit()
 
     @staticmethod
     def _dump_models(models):
         if len(models) > 0:
-            return [model.model_dump() for model in models]
+            # pydantic v>=2.7
+            # return [model.model_dump() for model in models]
+            # pydantic v<2.7
+            return [model.dict() for model in models]
         else:
             return []
 
 
 if __name__ == "__main__":
-    db = Database("./database/auto_trade.db")
+    db = Database("./fastapi_server/database/auto_trade.db")
     # query = """
     # select * from portfolio
     # """
@@ -73,8 +91,15 @@ if __name__ == "__main__":
     # print(res)
 
     prs = PortfolioRepositoryService(db)
-    # res = prs.add(Portfolio(stock_symbol="123121", country="US", ratio=0.5, accum_asset=1000))
-    # res = prs.update("123126", Portfolio(stock_symbol="123126", country="ks", ratio=0.3, accum_asset=5000))
+    # res = prs.add(Portfolio(stock_symbol="123121", country="US", ratio=0.5))
+    # res = prs.update("123121", Portfolio(stock_symbol="123126", country="ks", ratio=0.3))
+    res = prs.update_fields(
+        stock_symbol="453810",
+        update_data={
+            "stock_symbol": "453888",
+        },
+    )
     # res = prs.delete("123124")
     res = prs.get_all()
-    print(res[0].model_dump())
+    print(res)
+    # print(res[0].model_dump())
