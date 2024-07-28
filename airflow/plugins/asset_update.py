@@ -50,8 +50,9 @@ def get_balance():
 
     """
     response = requests.post(
-        url='http://0.0.0.0:8000/v1/trader/get_balance',
+        url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/trader/get_balance',
     )
+
     response_json = response.json()
     balance = int(response_json["output"]["prvs_rcdl_excc_amt"])
 
@@ -74,7 +75,9 @@ def check_portfolio(**kwargs):
     balance = kwargs['task_instance'].xcom_pull(key='balance')
 
     # 1. db에서 Portfolio table을 가져온다.
-    response = requests.get(url='http://0.0.0.0:8000/v1/portfolio/get/stock_symbol?all')
+    response = requests.get(
+        url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/get/stock_symbol?all'
+    )
     portfolio_rows = response.json()
     status = distribute_asset(
         balance=balance,

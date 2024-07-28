@@ -29,7 +29,7 @@ class FastAPIServer:
             return {"code": 200}
 
     def run(self):
-        uvicorn.run(self.app, host="0.0.0.0", port=int(os.getenv("FASTAPI_SERVER_PORT")))
+        uvicorn.run(self.app, host=os.getenv("FASTAPI_SERVER_HOST"), port=int(os.getenv("FASTAPI_SERVER_PORT")))
 
 
 class Inform(logging.Logger):
