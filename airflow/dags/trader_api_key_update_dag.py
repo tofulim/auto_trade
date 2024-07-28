@@ -10,7 +10,7 @@ key_update_dag = DAG(
     description="update KIS(한투) api key and carve at python environment",
     start_date=datetime.datetime(2024, 7, 1),
     # 매일 00:00에 실행합니다
-    schedule_interval="0 0 * * *",
+    schedule_interval="@daily",
 )
 
 update_key = PythonOperator(
