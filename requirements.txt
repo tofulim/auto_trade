@@ -5,9 +5,10 @@ finance-datareader==0.9.90
 prophet==1.1.5
 yfinance==0.2.37
 statsmodels==0.14.1
-fastapi==0.111.0
+fastapi==0.100
 uvicorn==0.29.0
 inject==5.2.1
 sqlmodel==0.0.9
 sqlalchemy==1.4.49
 # Airflow
+python-dotenv==1.0.1
