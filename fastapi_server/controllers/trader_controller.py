@@ -31,6 +31,8 @@ async def update_token(request: Request):
 
     logger.inform("Token updated", extra={"endpoint_name": request.url.path})
 
+    return True
+
 
 @router.get("/prophet")
 async def prophet(request: Request):

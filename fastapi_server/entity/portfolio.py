@@ -9,9 +9,10 @@ def get_default_updated_at():
 
 class PortfolioBase(SQLModel):
     stock_symbol: str
-    country: str
     ratio: float
+    country: str = Field(default='ks', nullable=False)
     month_purchase_flag: bool = Field(default=False, nullable=False)
+    month_budget: int = Field(default=0, nullable=False)
     updated_at: datetime = Field(default_factory=get_default_updated_at, nullable=False)
 
 

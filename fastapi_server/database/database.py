@@ -6,5 +6,5 @@ from fastapi_server.entity.portfolio import Portfolio # noqa
 
 class Database:
     def __init__(self, db_name):
-        self.engine = create_engine(f"sqlite:///{db_name}")
+        self.engine = create_engine(f"sqlite:///{db_name}", encoding='utf-8')
         SQLModel.metadata.create_all(self.engine)

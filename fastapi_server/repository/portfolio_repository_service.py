@@ -3,6 +3,7 @@ Author: zed.ai
 Reviewer:
 2024.05.22
 """
+from datetime import datetime, timedelta
 from sqlmodel import Session, select
 
 from fastapi_server.database.database import Database
@@ -57,6 +58,18 @@ class PortfolioRepositoryService:
             # session.add(result)
             session.commit()
 
+    def update_fields(self, stock_symbol: str, update_data: dict):
+        with Session(self.db.engine) as session:
+            statement = select(Portfolio).where(Portfolio.stock_symbol == stock_symbol)
+            result = session.exec(statement).one()
+
+            updated_at = datetime.utcnow() + timedelta(hours=9)
+            update_data.update({"updated_at": updated_at})
+            for key, value in update_data.items():
+                setattr(result, key, value)
+
+            session.commit()
+
     @staticmethod
     def _dump_models(models):
         if len(models) > 0:
@@ -78,8 +91,14 @@ if __name__ == "__main__":
     # print(res)
 
     prs = PortfolioRepositoryService(db)
-    # res = prs.add(Portfolio(stock_symbol="123121", country="US", ratio=0.5, accum_asset=1000))
-    # res = prs.update("123126", Portfolio(stock_symbol="123126", country="ks", ratio=0.3, accum_asset=5000))
+    # res = prs.add(Portfolio(stock_symbol="123121", country="US", ratio=0.5))
+    # res = prs.update("123121", Portfolio(stock_symbol="123126", country="ks", ratio=0.3))
+    res = prs.update_fields(
+        stock_symbol="453810",
+        update_data={
+            "stock_symbol": "453888",
+        },
+    )
     # res = prs.delete("123124")
     res = prs.get_all()
     print(res)
