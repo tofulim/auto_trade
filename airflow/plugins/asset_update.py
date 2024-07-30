@@ -1,3 +1,4 @@
+import json
 import os
 import logging
 import dotenv
@@ -66,51 +67,69 @@ def check_portfolio(**kwargs):
                 {'updated_at': '2024-07-14T05:05:35.796000', 'stock_symbol': '453810', 'month_purchase_flag': False, 'country': 'ks', 'ratio': 0.5, 'id': 1},
                 {'updated_at': '2024-07-14T05:23:47.648000', 'stock_symbol': '368590', 'month_purchase_flag': False, 'country': 'ks', 'ratio': 0.5, 'id': 2}
             ]
-    2. portfolio row의 month_purchase_column을 확인하고 아직 구매하지 않은(False) 종목들을 가져온다.
-    3. 구매한다.
-    - slack 보낸다.
+    2. portfolio row의 month_purchase_column과 month_budget을 확인하고 아직 구매 및 할당되지 않은(False) 종목들을 가져온다.
+    3. 분기점
+    - 종목들이 있다면 distribute_asset을 실행한다.
+    - 없다면 빈 테스크를 실행한다.
 
     """
-    # 0. 앞서 구한 예수금 가져오기
-    balance = kwargs['task_instance'].xcom_pull(key='balance')
-
     # 1. db에서 Portfolio table을 가져온다.
     response = requests.get(
-        url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/get/stock_symbol?all'
+        url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/get/all'
     )
     portfolio_rows = response.json()
-    status = distribute_asset(
-        balance=balance,
-        portfolio_rows=portfolio_rows,
-    )
 
-    return balance
+    # 2. 아직 구매 및 할당되지 않는 후보 종목들의 종목 id를 구한다.
+    candidate_portfolio_rows = list(filter(
+        lambda row: row["month_purchase_flag"] is False and row["month_budget"] == 0, portfolio_rows
+    ))
+
+    print(f"candidate_portfolio_rows: {candidate_portfolio_rows}")
+    if len(candidate_portfolio_rows) > 0:
+        # xcom에 저장하고 다음 task_name 반환
+        kwargs['task_instance'].xcom_push(key='candidate_portfolio_rows', value=candidate_portfolio_rows)
+        logger.info(
+            f"run distribute_asset",
+        )
+        return "distribute_asset"
+    else:
+        logger.info(
+            f"run task_empty",
+        )
+        return "task_empty"
 
 
-def distribute_asset(balance: int, portfolio_rows: list):
+def distribute_asset(**kwargs):
     """ asset 분배
     asset을 portfolio 종목들 ratio에 따라 분배한다.
-
-    Args:
-        balance (int): 예수금
-        portfolio_rows (list): Portfolio rows
+    (단, xcom을 통해 받은 종목들은 month_budget이 아직 할당되지 않아 0이고 month_purchase_flag 또한 False인 상태이다.)
 
     Returns:
         status (bool): 상태
     """
-    status = False
-    for portfolio_row in portfolio_rows:
-        # utc + 9hours = ktc
-        now_ktc = datetime.now() + timedelta(hours=9)
-        ratio = portfolio_row["ratio"]
-        month_budget = portfolio_row["month_budget"]
-        month_purchase_flag = portfolio_row["month_purchase_flag"]
+    # 0. 앞서 구한 예수금 가져오기
+    balance = kwargs['task_instance'].xcom_pull(key='balance')
+    # 1. 앞서 구한 할당/구매 안한 포트폴리오 rows 가져오기
+    candidate_portfolio_rows = kwargs['task_instance'].xcom_pull(key='candidate_portfolio_rows')
 
-        # 해당 종목의 구매비율, 금월 구매여부, 현재 할당예산 등을 고려한다.
-        if ratio >= 0 and month_purchase_flag is not True and month_budget == 0:
-            # 조건을 만족하는 경우 분배한다.
-            budget = int(balance * ratio)
-            status = True
+    for candidate_portfolio_row in candidate_portfolio_rows:
+        stock_symbol = candidate_portfolio_row["stock_symbol"]
+        ratio = float(candidate_portfolio_row["ratio"])
 
+        # 구매는 다음 DAG에서 수행하므로 distribute DAG에서는 month_budget만 업데이트해준다.
+        update_dict = {
+            "month_budget": balance * ratio,
+        }
 
-    return status
+        response = requests.put(
+            url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/put_fields?stock_symbol={stock_symbol}',
+            data=json.dumps(update_dict),
+        )
+        logger.info(
+            response.json(),
+        )
+
+        if response.status_code is not 200:
+            raise Exception(f"status_code is {response.status_code} !")
+
+    return True
