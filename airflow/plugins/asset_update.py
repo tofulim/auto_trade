@@ -74,8 +74,11 @@ def check_portfolio(**kwargs):
 
     """
     # 1. db에서 Portfolio table을 가져온다.
-    response = requests.get(
-        url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/get/all'
+    response = requests.post(
+        url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/get',
+        data=json.dumps({
+            "get_all": True,
+        })
     )
     portfolio_rows = response.json()
 
@@ -84,7 +87,6 @@ def check_portfolio(**kwargs):
         lambda row: row["month_purchase_flag"] is False and row["month_budget"] == 0, portfolio_rows
     ))
 
-    print(f"candidate_portfolio_rows: {candidate_portfolio_rows}")
     if len(candidate_portfolio_rows) > 0:
         # xcom에 저장하고 다음 task_name 반환
         kwargs['task_instance'].xcom_push(key='candidate_portfolio_rows', value=candidate_portfolio_rows)
