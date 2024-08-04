@@ -76,7 +76,8 @@ def execute_decisions(**kwargs):
     # 2. 결정 수행
     for portfolio_behavior_decision in portfolio_behavior_decisions:
         stock_symbol, behavior, diff_rate, month_budget, last_price = portfolio_behavior_decision
-        ord_qty = month_budget // last_price
+        ord_qty = int(month_budget // last_price)
+        last_price = int(last_price)
         result = None
         if behavior == STAY:
             continue
@@ -86,10 +87,22 @@ def execute_decisions(**kwargs):
                     url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/trader/buy',
                     data=json.dumps({
                         "stock_symbol": stock_symbol,
-                        "ord_qty": int(ord_qty),
-                        "ord_price": int(last_price),
+                        "ord_qty": ord_qty,
+                        "ord_price": last_price,
                     })
                 )
+
+                # 구매는 다음 DAG에서 수행하므로 distribute DAG에서는 month_budget만 업데이트해준다.
+                update_dict = {
+                    "month_budget": month_budget - (ord_qty * last_price),
+                    "month_purchase_flag": True,
+                }
+
+                response = requests.put(
+                    url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/put_fields?stock_symbol={stock_symbol}',
+                    data=json.dumps(update_dict),
+                )
+                logger.info(f"stock_symbol: {stock_symbol} - behavior {behavior}'s result has saved at db with {response.json()}")
 
         elif behavior == SELL:
             if ord_qty > 0:
@@ -97,13 +110,14 @@ def execute_decisions(**kwargs):
                     url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/trader/sell',
                     data=json.dumps({
                         "stock_symbol": stock_symbol,
-                        "ord_qrt": ord_qty,
+                        "ord_qty": ord_qty,
                         "ord_price": last_price,
                     })
                 )
 
         else:
             raise ValueError("behavior must one of (STAY | PURCHASE | SELL)")
+
 
         logger.info(f"stock_symbol: {stock_symbol} - behavior {behavior}'s result is {result.json()}")
 
