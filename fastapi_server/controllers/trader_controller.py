@@ -3,6 +3,7 @@ import inject
 
 from datetime import datetime
 from fastapi import APIRouter, Request
+from pydantic import Field, BaseModel
 
 from fastapi_server.database.database import Database
 from fastapi_server.repository.portfolio_repository_service import PortfolioRepositoryService
@@ -34,10 +35,20 @@ async def update_token(request: Request):
     return True
 
 
-@router.get("/prophet")
-async def prophet(request: Request):
+class Prophet(BaseModel):
+    stock_symbols: list = Field(default=[])
+
+
+class Buy(BaseModel):
+    stock_symbol: str
+    ord_qty: int
+    ord_price: int
+
+
+@router.post("/prophet")
+async def prophet(request: Request, prophet: Prophet):
     # load portfolio from db
-    stock_rows = portfolio_repository_service.get_all()
+    stock_rows = portfolio_repository_service.get(stock_symbols=prophet.stock_symbols)
     stock_symbol2change_rate = prophet_model(stock_rows, '2021-01-01', datetime.today().strftime('%Y-%m-%d'))
 
     logger.inform(f"stock_symbol2change_rate {stock_symbol2change_rate}", extra={"endpoint_name": request.url.path})
@@ -46,15 +57,15 @@ async def prophet(request: Request):
 
 
 @router.post("/buy")
-async def buy(request: Request, stock_symbol: str, ord_qty: int, ord_price: int):
+async def buy(request: Request, buy: Buy):
     res = trader.buy_stock(
-        stock_code=stock_symbol,
-        ord_qty=str(ord_qty),
-        ord_price=str(ord_price),
+        stock_code=buy.stock_symbol,
+        ord_qty=buy.ord_qty,
+        ord_price=buy.ord_price,
     )
 
     logger.inform(
-        f"Buy stock {stock_symbol} {ord_qty} {ord_price} | Status {res['status_code']} | Error {res['error']}",
+        f"Buy stock {buy.dict()} | Status {res['status_code']} | Error {res['error']}",
         extra={"endpoint_name": request.url.path}
     )
 
@@ -80,8 +91,8 @@ async def cancel(request: Request, ord_orgno: int, orgn_odno: int):
 async def sell(request: Request, stock_symbol: str, ord_qty: int, ord_price: int):
     res = trader.sell_stock(
         stock_code=stock_symbol,
-        ord_qty=str(ord_qty),
-        ord_price=str(ord_price)
+        ord_qty=ord_qty,
+        ord_price=ord_price,
     )
 
     logger.inform(
