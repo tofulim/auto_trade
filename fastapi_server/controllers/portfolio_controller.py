@@ -1,9 +1,11 @@
 import logging
 from http.client import HTTPException
+from typing import Union
 
 import inject
 
 from fastapi import APIRouter, Request
+from pydantic import BaseModel, Field
 
 from fastapi_server.database.database import Database
 from fastapi_server.entity.portfolio import Portfolio, PortfolioBase
@@ -32,12 +34,17 @@ def create_portfolio(portfolio: PortfolioBase, request: Request):
     return {"message": "Portfolio created successfully"}
 
 
-@router.get("/get/{stock_symbol}")
-def read_portfolio(stock_symbol: str, request: Request):
-    if stock_symbol == "all":
+class ReadPortfolio(BaseModel):
+    stock_symbols: list = Field(default=[])
+    get_all: bool = False
+
+
+@router.post("/get")
+def read_portfolios(request: Request, read_portfolio: ReadPortfolio):
+    if read_portfolio.get_all:
         portfolio = portfolio_repository_service.get_all()
     else:
-        portfolio = portfolio_repository_service.get(stock_symbol=stock_symbol)
+        portfolio = portfolio_repository_service.get(stock_symbols=read_portfolio.stock_symbols)
 
     logger.inform(f"get Portfolio {portfolio}", extra={"endpoint_name": request.url.path})
     if portfolio is None:
@@ -64,7 +71,7 @@ def update_portfolio_with_dict(stock_symbol: str, update_dict: dict, request: Re
 
 @router.delete("/delete/{stock_symbol}")
 def delete_portfolio(stock_symbol: str, request: Request):
-    portfolio = portfolio_repository_service.get(stock_symbol=stock_symbol)
+    portfolio = portfolio_repository_service.get(stock_symbols=[stock_symbol])
     if portfolio is None:
         raise HTTPException(status_code=404, detail="Portfolio not found")
     portfolio_repository_service.delete(stock_symbol=stock_symbol)
