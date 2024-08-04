@@ -20,7 +20,6 @@ class ProphetModel:
     여러개의 주식에 대해 경향성을 예측하고 변화율을 반환한다.
     """
     def __init__(self):
-        self.model = Prophet()
         self.periods = int(os.getenv("PERIOD_DAYS"))
 
     def __call__(self, stock_rows: List[dict], start_date: str, end_date: str, save_plot: bool = True):
@@ -33,7 +32,7 @@ class ProphetModel:
             end_date (str): 사용할 종료 날짜 ex. '2021-12-31'
 
         Returns:
-            prophecies (dict): 종가 경향 변화율 예측 결과를 담은 dict (key: 종목명, value: 변화율)
+            prophecies (dict): 종가 경향 변화율 예측 결과와 마지막 종가를 담은 dict (key: 종목명, value: {변화율, 종가})
         """
         prophecies = {}
         for stock_row in stock_rows:
@@ -43,19 +42,26 @@ class ProphetModel:
             else:
                 stock_symbol = stock_row['stock_symbol']
 
+            self.model = Prophet()
             self.fit(stock_symbol, start_date, end_date)
             forecast = self.predict(periods=self.periods)
 
-            change_rate = self.get_change_rate(forecast, periods=self.periods)
-            prophecies[stock_symbol] = change_rate
+            diff_rate = self.get_diff_rate(forecast, periods=self.periods)
+            last_price = self.stock_data['y'][-1]
+            prophecies[stock_symbol] = {
+                "diff_rate": diff_rate,
+                "last_price": last_price
+            }
             # 경향 예측 그래프를 저장한다.
             if save_plot:
-                self.plot(stock_symbol, forecast)
+                fig = self.plot(forecast)
+                # TODO: 추후 경로 지정
+                fig.savefig(f"./prophet_result/{datetime.now().strftime('%Y-%m-%d')}_{stock_symbol}.png")
 
         return prophecies
 
     @staticmethod
-    def get_change_rate(forecast, periods: int):
+    def get_diff_rate(forecast, periods: int):
         """
         변화율을 계산한다.
         오늘로부터 n일 후의 종가와 n일 전의 종가를 비교하여 변화율을 계산한다.
@@ -65,12 +71,12 @@ class ProphetModel:
             periods (int): 예측한 기간
 
         Returns:
-            change_rate (float): 0-1 사이의 float 변화율에 100을 곱한 퍼센테이지 값
+            diff_rate (float): 0-1 사이의 float 변화율에 100을 곱한 퍼센테이지 값
 
         """
         yhats = forecast["yhat"].values
-        change_rate = round(((yhats[-1] - yhats[-periods]) / yhats[-periods]) * 100, 2)
-        return change_rate
+        diff_rate = round(((yhats[-1] - yhats[-periods]) / yhats[-periods]) * 100, 2)
+        return diff_rate
 
     def fit(self, stock_symbol: str, start_date: str, end_date: str):
         """
@@ -92,7 +98,6 @@ class ProphetModel:
         # 종가 기준
         self.stock_data["y"] = self.stock_data["Close"]
         self.stock_data["ds"] = self.stock_data.index
-
         self.model.fit(self.stock_data)
 
     def predict(self, periods: int = 30):
@@ -101,9 +106,9 @@ class ProphetModel:
 
         return forecast
 
-    def plot(self, stock_symbol: str, forecast):
+    def plot(self, forecast):
         fig = self.model.plot(forecast, include_legend=True)
-        fig.savefig(f"./prophet_result/{datetime.now().strftime('%Y-%m-%d')}_{stock_symbol}.png")
+        return fig
 
 
 if __name__ == "__main__":

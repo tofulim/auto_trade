@@ -19,9 +19,9 @@ class PortfolioRepositoryService:
             session.add(portfolio)
             session.commit()
 
-    def get(self, stock_symbol: str, stay_entity=False):
+    def get(self, stock_symbols: list, stay_entity=False):
         with Session(self.db.engine) as session:
-            statement = select(Portfolio).where(Portfolio.stock_symbol == stock_symbol)
+            statement = select(Portfolio).where(Portfolio.stock_symbol.in_(stock_symbols))
             result = session.exec(statement).all()
 
         if stay_entity:
@@ -91,15 +91,18 @@ if __name__ == "__main__":
     # print(res)
 
     prs = PortfolioRepositoryService(db)
+    res = prs.get(
+        stock_symbols=[453810, 368590],
+    )
     # res = prs.add(Portfolio(stock_symbol="123121", country="US", ratio=0.5))
     # res = prs.update("123121", Portfolio(stock_symbol="123126", country="ks", ratio=0.3))
-    res = prs.update_fields(
-        stock_symbol="453810",
-        update_data={
-            "stock_symbol": "453888",
-        },
-    )
+    # res = prs.update_fields(
+    #     stock_symbol="453810",
+    #     update_data={
+    #         "stock_symbol": "453888",
+    #     },
+    # )
     # res = prs.delete("123124")
-    res = prs.get_all()
+    # res = prs.get_all()
     print(res)
     # print(res[0].model_dump())
