@@ -13,6 +13,8 @@ import pandas as pd
 from prophet import Prophet
 from datetime import datetime, timedelta, timezone
 
+from fastapi_server.utils import ensure_directory_exists
+
 
 class ProphetModel:
     """
@@ -50,13 +52,16 @@ class ProphetModel:
             last_price = self.stock_data['y'][-1]
             prophecies[stock_symbol] = {
                 "diff_rate": diff_rate,
-                "last_price": last_price
+                "last_price": last_price,
             }
             # 경향 예측 그래프를 저장한다.
             if save_plot:
                 fig = self.plot(forecast)
                 # TODO: 추후 경로 지정
-                fig.savefig(f"./prophet_result/{datetime.now().strftime('%Y-%m-%d')}_{stock_symbol}.png")
+                save_path = f"./prophet_result/{datetime.now().strftime('%Y-%m-%d')}_{stock_symbol}.png"
+                ensure_directory_exists(save_path)
+                fig.savefig(save_path)
+                prophecies[stock_symbol]["fig_save_path"] = save_path
 
         return prophecies
 

@@ -1,4 +1,6 @@
 import logging
+import os
+
 import inject
 
 from datetime import datetime
@@ -7,6 +9,7 @@ from pydantic import Field, BaseModel
 
 from fastapi_server.database.database import Database
 from fastapi_server.repository.portfolio_repository_service import PortfolioRepositoryService
+from fastapi_server.slack import KISSlackBot
 from prophecy import ProphetModel
 from trader import Trader
 
@@ -20,6 +23,7 @@ db = inject.instance(Database)
 portfolio_repository_service = inject.instance(PortfolioRepositoryService)
 prophet_model = inject.instance(ProphetModel)
 trader = inject.instance(Trader)
+slack_bot = inject.instance(KISSlackBot)
 
 
 logger = logging.getLogger("api_logger")
@@ -49,11 +53,29 @@ class Buy(BaseModel):
 async def prophet(request: Request, prophet: Prophet):
     # load portfolio from db
     stock_rows = portfolio_repository_service.get(stock_symbols=prophet.stock_symbols)
-    stock_symbol2change_rate = prophet_model(stock_rows, '2021-01-01', datetime.today().strftime('%Y-%m-%d'))
+    prophecies = prophet_model(stock_rows, '2021-01-01', datetime.today().strftime('%Y-%m-%d'))
 
-    logger.inform(f"stock_symbol2change_rate {stock_symbol2change_rate}", extra={"endpoint_name": request.url.path})
+    channel_id = os.getenv("DAILY_REPORT_CHANNEL")
+    for stock_symbol, prophecy_dict in prophecies.items():
+        fig_save_path = prophecy_dict.pop("fig_save_path", None)
+        text = f"{stock_symbol} - [변화율]: {prophecy_dict['diff_rate']} / [전날 종가]: {prophecy_dict['last_price']}"
+        response = slack_bot.post_message(
+            channel_id=channel_id,
+            text=text,
+        )
 
-    return stock_symbol2change_rate
+        thread_ts = response['ts']
+        channel_id = response['channel']
+
+        _ = slack_bot.post_file(
+            channel_id=channel_id,
+            thread_ts=thread_ts,
+            save_path=fig_save_path,
+        )
+
+    logger.inform(f"prophecies {prophecies}", extra={"endpoint_name": request.url.path})
+
+    return prophecies
 
 
 @router.post("/buy")
