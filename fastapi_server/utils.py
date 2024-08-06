@@ -59,3 +59,12 @@ def initialize_api_logger():
 
 def get_controllers(modules):
     return [importlib.import_module(module_name) for module_name in modules]
+
+
+def ensure_directory_exists(save_path: str):
+    # 부모 디렉토리 경로를 가져옵니다.
+    parent_directory = os.path.dirname(save_path)
+
+    # 부모 디렉토리가 존재하는지 확인하고, 없으면 생성합니다.
+    if not os.path.exists(parent_directory):
+        os.makedirs(parent_directory)
