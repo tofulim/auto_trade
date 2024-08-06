@@ -176,4 +176,3 @@ cython_debug/
 fastapi_server/database/auto_trade.db
 airflow/logs
 airflow/airflow.db
-fastapi_server/slack.py
