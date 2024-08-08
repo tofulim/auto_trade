@@ -83,11 +83,22 @@ async def buy(request: Request, buy: Buy):
     res = trader.buy_stock(
         stock_code=buy.stock_symbol,
         ord_qty=buy.ord_qty,
-        ord_price=buy.ord_price,
+        # ord_price=buy.ord_price,
+        # 장전 시간외는 전날 종가를 사용하지만 공란으로 비우지말고 0을 넣으라고 함
+        ord_price="0",
     )
 
+    text = f"""
+    f"Buy stock {buy.dict()} | Status {res['status_code']} | | output {str(res['output'])} | Error {res['error']}"
+    """
+    if res["status_code"] == "200":
+        _ = slack_bot.post_message(
+            channel_id=os.getenv("TRADE_ALARM_CHANNEL"),
+            text=text,
+        )
+
     logger.inform(
-        f"Buy stock {buy.dict()} | Status {res['status_code']} | Error {res['error']}",
+        text,
         extra={"endpoint_name": request.url.path}
     )
 
