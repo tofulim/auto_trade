@@ -94,7 +94,7 @@ class Trader:
 
     def buy_stock(self, stock_code: str, ord_qty: int, ord_price: int):
         """
-        장전 시간외 매수를 통해 전날 종가 기준으로 지정가 구매한다.
+        장전 시간외 매수를 통해 전날 종가 기준으로 예약 구매한다.
         해당 stock의 accum asset이 감당할 수 있을만큼 구매한다.
         status_code와 에러를 반환한다.
 
@@ -110,7 +110,7 @@ class Trader:
 
         """
         tr_id = os.getenv("BUY_TR_ID")
-        api = "uapi/domestic-stock/v1/trading/order-cash"
+        api = "uapi/domestic-stock/v1/trading/order-resv"
 
         data = {
             # 계좌번호
@@ -119,11 +119,15 @@ class Trader:
             # 종목번호
             "PDNO": stock_code,
             # 주문구분 - 지정가(00), 시장가(01), 장전 시간외(05)
-            "ORD_DVSN": "05",
+            "ORD_DVSN_CD": "05",
             # 주문 수량
             "ORD_QTY": str(ord_qty),
             # 주문 단가
             "ORD_UNPR": str(ord_price),
+            # 매도 매수 구분 코드 (01: 매도 / 02: 매수)
+            "SLL_BUY_DVSN_CD": "02",
+            # 주문대상 잔고 구분코드 10: 현금
+            "ORD_OBJT_CBLC_DVSN_CD": "10",
         }
 
         headers = {
