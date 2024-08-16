@@ -1,9 +1,9 @@
 import datetime
 import logging
 import pendulum
-from airflow.operators.empty import EmptyOperator
 
 from airflow import DAG
+from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator, BranchPythonOperator
 from prophesy import prophesy_portfolio, execute_decisions
 from common.calc_business_day import check_date
@@ -25,6 +25,15 @@ prophesy_n_make_decision_dag = DAG(
     schedule_interval="0 20 * * *",
     # schedule_interval=None,
 )
+
+check_date = BranchPythonOperator(
+    task_id='check_date',
+    python_callable=check_date,
+    op_kwargs={"next_task_name": "prophesy_portfolio"},
+    dag=prophesy_n_make_decision_dag,
+    provide_context=True,
+)
+
 # 종목 경향 예측 및 매매 결정
 prophesy_portfolio = PythonOperator(
     task_id="prophesy_portfolio",

@@ -28,8 +28,9 @@ asset_check_n_distribution_dag = DAG(
 check_date = BranchPythonOperator(
     task_id='check_date',
     python_callable=check_date,
-    op_args={"next_task_name": "check_balance"},
+    op_kwargs={"next_task_name": "check_balance"},
     dag=asset_check_n_distribution_dag,
+    provide_context=True,
 )
 
 check_balance = BranchPythonOperator(

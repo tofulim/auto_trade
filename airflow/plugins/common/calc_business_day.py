@@ -1,15 +1,26 @@
 import os
 import logging
 import dotenv
+import holidays
+from datetime import datetime, timedelta, date
 
-from datetime import datetime, timedelta
-from holidayskr import today_is_holiday
 
 dotenv.load_dotenv(f"./config/PROD.env")
 logger = logging.getLogger("api_logger")
 
 
-def is_ktc_business_day():
+def is_holiday(curr_datetime: str):
+    # 대한민국 공휴일에 대한 holidays 객체 생성
+    kr_holidays = holidays.SouthKorea()
+    # 문자열을 date 객체로 변환
+    check_date = date.fromisoformat(curr_datetime)
+
+    if check_date in kr_holidays:
+        return True
+    else:
+        return False
+
+def is_ktc_business_day(execution_date):
     """한국 영업일 확인
     지금 시간이 거래가능일인지 확인한다.
     - 평일 확인
@@ -21,23 +32,20 @@ def is_ktc_business_day():
 
     """
     flag = False
+    curr_date = execution_date.strftime("%Y-%m-%d")
 
-    # 현재 UTC 시간
-    now_utc = datetime.utcnow()
-    # 한국 시간
-    kst_offset = timedelta(hours=9)
-    now_kst = now_utc + kst_offset
 
-    if now_kst.weekday() < 5 and today_is_holiday() is False:
+    if execution_date.weekday() < 5 and is_holiday(curr_date) is False:
         flag = True
 
     return flag
 
 
-def check_date(next_task_name: str):
+def check_date(execution_date: datetime, next_task_name: str):
     """날짜 확인
     현재 날짜를 확인하고 주어진 task를 실행할지 혹은 empty task를 실행할 지 결정한다.
     Args:
+        execution_date (str): 실행시점
         next_task_name (str): 날짜가 맞다면 수행할 다음 task
 
     Returns:
@@ -45,7 +53,7 @@ def check_date(next_task_name: str):
 
     """
     # 정상 영업일의 경우 다음 과정을 수행한다.
-    if is_ktc_business_day() is True:
+    if is_ktc_business_day(execution_date) is True:
         logger.info(
             f"run next task {next_task_name}",
         )
