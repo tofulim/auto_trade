@@ -1,5 +1,6 @@
 import datetime
 import logging
+import pendulum
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator, BranchPythonOperator
@@ -9,14 +10,17 @@ from prophesy import prophesy_portfolio, execute_decisions
 # Logger
 logger = logging.getLogger("api_logger")
 
+# KST 시간
+kst = pendulum.timezone("Asia/Seoul")
+
 # 종목 경향 예측 -> 매매 결정 -> 매매 (할당예수금이 있다면)
 prophesy_n_make_decision_dag = DAG(
     # DAG 식별자용 아이디
     dag_id="prophesy_n_make_decision_dag",
     description="prophesy current portfolio's trend and make decision of purchase or sell",
-    start_date=datetime.datetime(2024, 7, 1),
-    # 매일 08:25 시간 외 장전거래를 실행합니다 (08:20 - 08:40)
-    schedule_interval="25 8 * * *",
+    start_date=datetime.datetime(2024, 7, 1, tzinfo=kst),
+    # 장 종료 후 금일 종가로 내일 장전 시간외 매수로 예약 매수를 걸어 놓는다.
+    schedule_interval="0 20 * * *",
     # schedule_interval=None,
 )
 # 종목 경향 예측 및 매매 결정
