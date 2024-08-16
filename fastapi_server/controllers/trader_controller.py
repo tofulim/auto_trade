@@ -85,7 +85,7 @@ async def buy(request: Request, buy: Buy):
         ord_qty=buy.ord_qty,
         # ord_price=buy.ord_price,
         # 장전 시간외는 전날 종가를 사용하지만 공란으로 비우지말고 0을 넣으라고 함
-        ord_price="0",
+        ord_price=0,
     )
 
     text = f"""

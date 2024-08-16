@@ -3,7 +3,6 @@ import os
 import logging
 import dotenv
 import requests
-from datetime import datetime, timedelta
 
 dotenv.load_dotenv(f"./config/PROD.env")
 logger = logging.getLogger("api_logger")
