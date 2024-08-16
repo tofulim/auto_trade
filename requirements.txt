@@ -13,3 +13,4 @@ sqlalchemy==1.4.49
 python-dotenv==1.0.1
 slack_sdk==3.31.0
 pendulum==2.1.2
+holidayskr==0.2.0
