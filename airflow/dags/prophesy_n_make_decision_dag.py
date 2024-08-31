@@ -22,7 +22,7 @@ prophesy_n_make_decision_dag = DAG(
     description="prophesy current portfolio's trend and make decision of purchase or sell",
     start_date=datetime.datetime(2024, 7, 1, tzinfo=kst),
     # 장 종료 후 금일 종가로 내일 장전 시간외 매수로 예약 매수를 걸어 놓는다.
-    schedule_interval="0 20 * * *",
+    schedule_interval="30 0 * * *",
     # schedule_interval=None,
 )
 
