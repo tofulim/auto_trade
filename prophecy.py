@@ -95,7 +95,8 @@ class ProphetModel:
         self.stock_symbol = stock_symbol
         self.start_date = start_date
         KST = timezone(timedelta(hours=9))
-        self.end_date = datetime.now(KST).strftime('%Y-%m-%d')
+        end_datetime = datetime.now(KST) + timedelta(days=1)
+        self.end_date = end_datetime.strftime('%Y-%m-%d')
 
         self.stock_data = yf.download(stock_symbol, start=start_date, end=end_date)
         self.stock_data = self.stock_data.asfreq('B')

@@ -3,4 +3,3 @@
 
 # Architecture
 ![image](https://github.com/user-attachments/assets/b60187fb-e13f-4100-86ee-f62946d563a5)
-
