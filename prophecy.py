@@ -98,7 +98,7 @@ class ProphetModel:
         end_datetime = datetime.now(KST) + timedelta(days=1)
         self.end_date = end_datetime.strftime('%Y-%m-%d')
 
-        self.stock_data = yf.download(stock_symbol, start=start_date, end=end_date)
+        self.stock_data = yf.download(stock_symbol, start=start_date, end=self.end_date)
         self.stock_data = self.stock_data.asfreq('B')
 
         # 종가 기준
