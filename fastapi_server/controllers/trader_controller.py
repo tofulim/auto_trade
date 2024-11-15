@@ -3,7 +3,7 @@ import os
 
 import inject
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Request
 from pydantic import Field, BaseModel
 
@@ -53,12 +53,15 @@ class Buy(BaseModel):
 async def prophet(request: Request, prophet: Prophet):
     # load portfolio from db
     stock_rows = portfolio_repository_service.get(stock_symbols=prophet.stock_symbols)
-    prophecies = prophet_model(stock_rows, '2021-01-01', datetime.today().strftime('%Y-%m-%d'))
+
+    KST = timezone(timedelta(hours=9))
+    end_datetime = datetime.now(KST)
+    prophecies = prophet_model(stock_rows, '2021-01-01', end_datetime.strftime('%Y-%m-%d'))
 
     channel_id = os.getenv("DAILY_REPORT_CHANNEL")
     for stock_symbol, prophecy_dict in prophecies.items():
         fig_save_path = prophecy_dict.pop("fig_save_path", None)
-        text = f"{stock_symbol} - [변화율]: {prophecy_dict['diff_rate']} / [전날 종가]: {prophecy_dict['last_price']}"
+        text = f"{stock_symbol} - [변화율]: {prophecy_dict['diff_rate']} / [금일 종가]: {prophecy_dict['last_price']}"
         response = slack_bot.post_message(
             channel_id=channel_id,
             text=text,
