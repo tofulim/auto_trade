@@ -59,8 +59,8 @@ def check_date(execution_date: datetime, next_task_name: str, next_ds: str, use_
     logger.info(
             f"input execution_date is {execution_date} and next_ds is {next_ds}. next_ds type is {type(next_ds)}",
         )
-    
-    
+
+
     if use_next_ds is True:
         run_date = next_ds
     else:
