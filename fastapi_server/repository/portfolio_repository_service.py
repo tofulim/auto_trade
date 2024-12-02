@@ -91,9 +91,9 @@ if __name__ == "__main__":
     # print(res)
 
     prs = PortfolioRepositoryService(db)
-    res = prs.get(
-        stock_symbols=[453810, 368590],
-    )
+    # res = prs.get(
+    #     stock_symbols=[453810, 368590],
+    # )
     # res = prs.add(Portfolio(stock_symbol="123121", country="US", ratio=0.5))
     # res = prs.update("123121", Portfolio(stock_symbol="123126", country="ks", ratio=0.3))
     # res = prs.update_fields(
@@ -103,6 +103,6 @@ if __name__ == "__main__":
     #     },
     # )
     # res = prs.delete("123124")
-    # res = prs.get_all()
+    res = prs.get_all()
     print(res)
     # print(res[0].model_dump())

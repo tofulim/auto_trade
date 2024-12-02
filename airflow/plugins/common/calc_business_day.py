@@ -13,14 +13,14 @@ def is_holiday(curr_datetime: str):
     # 대한민국 공휴일에 대한 holidays 객체 생성
     kr_holidays = holidays.SouthKorea()
     # 문자열을 date 객체로 변환
-    check_date = date.fromisoformat(curr_datetime)
+    check_date = date.fromisoformat(str(curr_datetime))
 
     if check_date in kr_holidays:
         return True
     else:
         return False
 
-def is_ktc_business_day(execution_date):
+def is_ktc_business_day(execution_date, is_next: bool = False):
     """한국 영업일 확인
     지금 시간이 거래가능일인지 확인한다.
     - 평일 확인
@@ -32,16 +32,19 @@ def is_ktc_business_day(execution_date):
 
     """
     flag = False
-    curr_date = execution_date.strftime("%Y-%m-%d")
+    if is_next:
+        curr_date = datetime.strptime(execution_date, "%Y-%m-%d").date()
+    else:
+        curr_date = execution_date.strftime("%Y-%m-%d")
 
 
-    if execution_date.weekday() < 5 and is_holiday(curr_date) is False:
+    if curr_date.weekday() < 5 and is_holiday(curr_date) is False:
         flag = True
 
     return flag
 
 
-def check_date(execution_date: datetime, next_task_name: str):
+def check_date(execution_date: datetime, next_task_name: str, next_ds: str, use_next_ds: bool = False):
     """날짜 확인
     현재 날짜를 확인하고 주어진 task를 실행할지 혹은 empty task를 실행할 지 결정한다.
     Args:
@@ -53,7 +56,17 @@ def check_date(execution_date: datetime, next_task_name: str):
 
     """
     # 정상 영업일의 경우 다음 과정을 수행한다.
-    if is_ktc_business_day(execution_date) is True:
+    logger.info(
+            f"input execution_date is {execution_date} and next_ds is {next_ds}. next_ds type is {type(next_ds)}",
+        )
+    
+    
+    if use_next_ds is True:
+        run_date = next_ds
+    else:
+        run_date = execution_date
+
+    if is_ktc_business_day(run_date, is_next=use_next_ds) is True:
         logger.info(
             f"run next task {next_task_name}",
         )
