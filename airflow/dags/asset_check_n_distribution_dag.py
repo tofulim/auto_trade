@@ -20,7 +20,7 @@ asset_check_n_distribution_dag = DAG(
     # DAG 식별자용 아이디
     dag_id="asset_check_n_distribution_dag",
     description="check current balance and update available portfolio",
-    start_date=datetime.datetime(2024, 7, 1, tzinfo=kst),
+    start_date=datetime.datetime(2024, 10, 13, tzinfo=kst),
     # 매일 18:00에 실행합니다
     schedule_interval="0 18 * * *",
 )
@@ -28,7 +28,7 @@ asset_check_n_distribution_dag = DAG(
 check_date = BranchPythonOperator(
     task_id='check_date',
     python_callable=check_date,
-    op_kwargs={"next_task_name": "check_balance"},
+    op_kwargs={"next_task_name": "check_balance", "use_next_ds": True},
     dag=asset_check_n_distribution_dag,
     provide_context=True,
 )

@@ -20,7 +20,7 @@ prophesy_n_make_decision_dag = DAG(
     # DAG 식별자용 아이디
     dag_id="prophesy_n_make_decision_dag",
     description="prophesy current portfolio's trend and make decision of purchase or sell",
-    start_date=datetime.datetime(2024, 7, 1, tzinfo=kst),
+    start_date=datetime.datetime(2024, 10, 13, tzinfo=kst),
     # 장 종료 후 금일 종가로 내일 장전 시간외 매수로 예약 매수를 걸어 놓는다.
     schedule_interval="0 20 * * *",
     # schedule_interval=None,
@@ -29,7 +29,7 @@ prophesy_n_make_decision_dag = DAG(
 check_date = BranchPythonOperator(
     task_id='check_date',
     python_callable=check_date,
-    op_kwargs={"next_task_name": "prophesy_portfolio"},
+    op_kwargs={"next_task_name": "prophesy_portfolio", "use_next_ds": True},
     dag=prophesy_n_make_decision_dag,
     provide_context=True,
 )
