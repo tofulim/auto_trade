@@ -55,6 +55,7 @@ class PortfolioRepositoryService:
             result.ratio = portfolio.ratio
             result.month_purchase_flag = portfolio.month_purchase_flag
             result.updated_at = portfolio.updated_at
+            result.order_status = portfolio.order_status
             # session.add(result)
             session.commit()
 
