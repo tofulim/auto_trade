@@ -6,7 +6,7 @@ from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator, BranchPythonOperator
 from asset_update import check_balance, check_portfolio, distribute_asset
-from common.calc_business_day import check_date
+from common.calc_business_day import check_auto_payment_date
 
 # Configure logger.py correctly
 # Logger
@@ -27,7 +27,7 @@ asset_check_n_distribution_dag = DAG(
 
 check_date = BranchPythonOperator(
     task_id='check_date',
-    python_callable=check_date,
+    python_callable=check_auto_payment_date,
     op_kwargs={"next_task_name": "check_balance", "use_next_ds": True},
     dag=asset_check_n_distribution_dag,
     provide_context=True,

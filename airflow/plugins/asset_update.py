@@ -81,9 +81,9 @@ def check_portfolio(**kwargs):
     )
     portfolio_rows = response.json()
 
-    # 2. 아직 구매 및 할당되지 않는 후보 종목들의 종목 id를 구한다.
+    # 2. 아직 예산이 할당되지 않았고 매수 신청을 하지 않은 후보 종목들의 종목 id를 구한다.
     candidate_portfolio_rows = list(filter(
-        lambda row: row["month_purchase_flag"] is False and row["month_budget"] == 0, portfolio_rows
+        lambda row: row["order_status"] == "N" and row["month_budget"] == 0, portfolio_rows
     ))
 
     if len(candidate_portfolio_rows) > 0:
