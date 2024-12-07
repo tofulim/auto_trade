@@ -13,6 +13,8 @@ class PortfolioBase(SQLModel):
     country: str = Field(default='ks', nullable=False)
     month_purchase_flag: bool = Field(default=False, nullable=False)
     month_budget: int = Field(default=0, nullable=False)
+    reserved_budget: int = Field(default=0, nullable=False)
+    order_status: str = Field(default="N", nullable=False)
     updated_at: datetime = Field(default_factory=get_default_updated_at, nullable=False)
 
 
