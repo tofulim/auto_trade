@@ -58,6 +58,56 @@ def get_balance():
 
     return balance
 
+def get_portfolio_rows():
+    # 1. db에서 Portfolio table을 가져온다.
+    response = requests.post(
+        url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/get',
+        data=json.dumps({
+            "get_all": True,
+        })
+    )
+    portfolio_rows = response.json()
+
+    return portfolio_rows
+
+def check_order_exist(next_task_name: str, **kwargs):
+    """주문 확인
+    예약 매수/매도 주문한 종목들 여부를 확인한다.
+    1. 있을 때
+    - 한투 API에 조회
+    2. 없을 때
+    - 종료
+    """
+    # db에서 Portfolio table을 가져온다.
+    portfolio_rows = get_portfolio_rows()
+
+    # 매매 신청한 종목들을 구한다.
+    candidate_portfolio_rows = list(filter(
+        lambda row: row["order_status"] == "O", portfolio_rows
+    ))
+
+    if len(candidate_portfolio_rows) > 0:
+        kwargs['task_instance'].xcom_push(key='candidate_portfolio_rows', value=candidate_portfolio_rows)
+
+        logger.info(
+            next_task_name,
+        )
+        return "check_order"
+    else:
+        logger.info(
+            "run task_empty",
+        )
+        return "task_empty"
+
+def check_order(**kwargs):
+    # 1. 앞서 구한 주문한 종목 rows 가져오기
+    candidate_portfolio_rows = kwargs['task_instance'].xcom_pull(key='candidate_portfolio_rows')
+
+    # 2. 전체 orders를 받아온다.
+    # TODO: orders trader controller에 request해서 가져온 뒤에 확인하고 처리하는 로직 남음
+
+
+
 
 def check_portfolio(**kwargs):
     """포트폴리오 투자
@@ -73,13 +123,7 @@ def check_portfolio(**kwargs):
 
     """
     # 1. db에서 Portfolio table을 가져온다.
-    response = requests.post(
-        url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/get',
-        data=json.dumps({
-            "get_all": True,
-        })
-    )
-    portfolio_rows = response.json()
+    portfolio_rows = get_portfolio_rows()
 
     # 2. 아직 예산이 할당되지 않았고 매수 신청을 하지 않은 후보 종목들의 종목 id를 구한다.
     candidate_portfolio_rows = list(filter(
