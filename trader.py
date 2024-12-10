@@ -326,6 +326,53 @@ class Trader:
 
         return self._request(api, data, headers, method="GET")
 
+    def get_reserved_orders(self, rsvn_ord_start_dt: str, rsvn_ord_end_dt: str):
+        """
+        국내 예약 주문 조회
+        예약 주문 내역을 전체를 확인할 수 있다.
+
+        Returns:
+            status_code (str): 상태 코드, (200 | 4xx | 5xx)
+            output (dict): 주문 결과 KRX_FWDG_ORD_ORGNO(한국거래소 전송주문조직번호), ORNO(주문번호), ORD_TMD(주문시간)을 갖는다.
+            error (str): 에러
+
+        """
+        tr_id = os.getenv("RSVN_ORD_TR_ID")
+        api = "uapi/domestic-stock/v1/trading/order-resv-ccnl"
+
+        data = {
+            # 예약주문일자
+            "RSVN_ORD_ORD_DT": rsvn_ord_start_dt,
+            "RSVN_ORD_END_DT": rsvn_ord_end_dt,
+            "RSVN_ORD_SEQ": "",
+            # 단말매체종류카드
+            "TMNL_MDIA_KIND_CD":"00",
+            # 계좌번호
+            "CANO": os.getenv("ACCOUNT_FRONT"),
+            "ACNT_PRDT_CD": os.getenv("ACCOUNT_REAR"),
+
+            "PRCS_DVSN_CD": "0",
+            "CNCL_YN": "Y",
+            # 종목코드 (공백 시 전체)
+            "PDNO": "",
+            "SLL_BUY_DVSN_CD": "",
+            "CTX_AREA_FK200": "",
+            "CTX_AREA_NK200": ""
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "authorization": f"Bearer {self.access_token}",
+            "appKey": self.app_key,
+            "appSecret": self.app_secret,
+            "tr_id": tr_id,
+            # 개인
+            "custtype": "P",
+            "hashkey": self.hashkey(data)
+        }
+
+        return self._request(api, data, headers, method="GET")
+
     # inquire_balance는 API response지만 get_balance는 직접 남은 예수금을 가져온다.
     def get_balance(self):
         response_json = self.inquire_balance()
