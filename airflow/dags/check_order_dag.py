@@ -31,7 +31,7 @@ check_order_dag = DAG(
 
 # 주문한 종목이 있다면 status를 확인한다.
 check_order_exist = BranchPythonOperator(
-    task_id='check_order',
+    task_id='check_order_exist',
     python_callable=check_order_exist,
     op_kwargs={"next_task_name": "check_order"},
     dag=check_order_dag,
