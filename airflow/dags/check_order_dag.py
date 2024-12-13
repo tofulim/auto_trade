@@ -5,8 +5,7 @@ import pendulum
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator, BranchPythonOperator
-from prophesy import prophesy_portfolio, execute_decisions
-from common.calc_business_day import check_date
+from trade_order import check_order_exist, check_order, change_status
 
 # Configure logger.py correctly
 # Logger
@@ -27,7 +26,7 @@ check_order_dag = DAG(
     dag_id="check_order_dag",
     description="check trade order and apply to db",
     start_date=datetime.datetime(2024, 10, 13, tzinfo=kst),
-    schedule_interval="0 18 * * *",
+    schedule_interval="0 19 * * *",
 )
 
 # 주문한 종목이 있다면 status를 확인한다.
@@ -40,9 +39,18 @@ check_order_exist = BranchPythonOperator(
 )
 
 # 주문 확인
-check_order = PythonOperator(
+check_order = BranchPythonOperator(
     task_id="check_order",
     python_callable=check_order,
+    provide_context=True,
+    op_kwargs={"next_task_name": "change_status"},
+    dag=check_order_dag,
+)
+
+# 주문 db 반영
+change_status = PythonOperator(
+    task_id="change_status",
+    python_callable=change_status,
     provide_context=True,
     dag=check_order_dag,
 )
@@ -54,3 +62,5 @@ task_empty = EmptyOperator(
 
 # 매매 주문 내역 확인하고 존재하면 상태 확인
 check_order_exist >> [check_order, task_empty]
+# 상태 반영
+check_order >> [change_status, task_empty]
