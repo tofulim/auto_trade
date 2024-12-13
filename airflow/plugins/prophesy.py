@@ -6,7 +6,7 @@ import requests
 
 from const import STAY, PURCHASE, SELL
 
-dotenv.load_dotenv(f"./config/PROD.env")
+dotenv.load_dotenv(f"/home/ubuntu/zed/auto_trade/config/prod.env")
 logger = logging.getLogger("api_logger")
 
 
