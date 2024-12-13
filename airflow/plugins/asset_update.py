@@ -4,7 +4,7 @@ import logging
 import dotenv
 import requests
 
-dotenv.load_dotenv(f"./config/PROD.env")
+dotenv.load_dotenv(f"/home/ubuntu/zed/auto_trade/config/prod.env")
 logger = logging.getLogger("api_logger")
 
 
@@ -58,6 +58,17 @@ def get_balance():
 
     return balance
 
+def get_portfolio_rows():
+    # 1. db에서 Portfolio table을 가져온다.
+    response = requests.post(
+        url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/get',
+        data=json.dumps({
+            "get_all": True,
+        })
+    )
+    portfolio_rows = response.json()
+
+    return portfolio_rows
 
 def check_portfolio(**kwargs):
     """포트폴리오 투자
@@ -73,13 +84,7 @@ def check_portfolio(**kwargs):
 
     """
     # 1. db에서 Portfolio table을 가져온다.
-    response = requests.post(
-        url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/get',
-        data=json.dumps({
-            "get_all": True,
-        })
-    )
-    portfolio_rows = response.json()
+    portfolio_rows = get_portfolio_rows()
 
     # 2. 아직 예산이 할당되지 않았고 매수 신청을 하지 않은 후보 종목들의 종목 id를 구한다.
     candidate_portfolio_rows = list(filter(
@@ -113,6 +118,7 @@ def distribute_asset(**kwargs):
     # 1. 앞서 구한 할당/구매 안한 포트폴리오 rows 가져오기
     candidate_portfolio_rows = kwargs['task_instance'].xcom_pull(key='candidate_portfolio_rows')
 
+    input_text = ""
     for candidate_portfolio_row in candidate_portfolio_rows:
         stock_symbol = candidate_portfolio_row["stock_symbol"]
         ratio = float(candidate_portfolio_row["ratio"])
@@ -132,5 +138,16 @@ def distribute_asset(**kwargs):
 
         if response.status_code is not 200:
             raise Exception(f"status_code is {response.status_code} !")
+
+        input_text += f"stock_symbol {stock_symbol}에 month_budget {update_dict['month_budget']}이 할당되었습니다.\n"
+
+    channel_id = os.getenv("DAILY_REPORT_CHANNEL")
+    response = requests.post(
+        url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/slackbot/send_message',
+        data=json.dumps({
+            "channel_id": channel_id,
+            "input_text": input_text,
+        }),
+    )
 
     return True

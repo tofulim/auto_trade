@@ -3,7 +3,7 @@ import dotenv
 import requests
 
 
-dotenv.load_dotenv(f"./config/prod.env")
+dotenv.load_dotenv(f"/home/ubuntu/zed/auto_trade/config/prod.env")
 
 
 def update_trader_key():

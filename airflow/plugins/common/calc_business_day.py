@@ -5,7 +5,7 @@ import holidays
 from datetime import datetime, timedelta, date
 
 
-dotenv.load_dotenv(f"./config/PROD.env")
+dotenv.load_dotenv(f"/home/ubuntu/zed/auto_trade/config/prod.env")
 logger = logging.getLogger("api_logger")
 
 
@@ -96,7 +96,7 @@ def check_auto_payment_date(execution_date: datetime, next_task_name: str, next_
             f"input execution_date is {execution_date} and next_ds is {next_ds}. next_ds type is {type(next_ds)}",
         )
 
-    auto_payment_day: int = int(os.getenv("AUTO_PAYMENT_DAY", 10))
+    auto_payment_day: int = int(os.getenv("AUTO_PAYMENT_DAY", 11))
 
     if use_next_ds is True:
         run_date = next_ds
@@ -104,7 +104,7 @@ def check_auto_payment_date(execution_date: datetime, next_task_name: str, next_
     else:
         run_date = execution_date
 
-    # 애초에 아직 자동이체일보다도(defautl: 10) 작은 날짜인 경우
+    # 애초에 아직 자동이체일보다도(defautl: 11) 작은 날짜인 경우
     if run_date.day < auto_payment_day:
         logger.info(
             f"today is not ready before auto_payment_day {auto_payment_day} run empty",

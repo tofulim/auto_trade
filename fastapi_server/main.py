@@ -5,7 +5,7 @@ from fastapi_server.utils import FastAPIServer, get_controllers
 from fastapi_server.utils import initialize_api_logger
 
 
-dotenv.load_dotenv(f"./config/prod.env")
+dotenv.load_dotenv(f"/home/ubuntu/zed/auto_trade/config/prod.env")
 initialize_api_logger()
 Initializer()
 

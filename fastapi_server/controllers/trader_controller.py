@@ -149,3 +149,18 @@ async def sell(request: Request):
     )
 
     return res
+
+
+@router.post("/get_orders")
+async def get_orders(request: Request, rsvn_ord_start_dt: str, rsvn_ord_end_dt: str):
+    res = trader.get_reserved_orders(
+        rsvn_ord_start_dt=rsvn_ord_start_dt,
+        rsvn_ord_end_dt=rsvn_ord_end_dt,
+    )
+
+    logger.inform(
+        f"get orders from {rsvn_ord_start_dt} - {rsvn_ord_end_dt} | Status {res['status_code']} | Error {res['error']}",
+        extra={"endpoint_name": request.url.path}
+    )
+
+    return res
