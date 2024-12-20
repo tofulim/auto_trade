@@ -207,24 +207,25 @@ def _get_behavior(
         and statistics["zscore"] >= 1
     ):
         statisstics_behavior = SELL
-        behavior_reason += f"statistics {statistics} is overbought | "
+        behavior_reason += f"statistics {statistics} is overbought. it's time to sell"
+    # 구매에는 보다 유연한 기준을 적용한다.
     elif (
-        statistics["rsi"] <= 30
-        and statistics["ma"]["day5"] < statistics["ma"]["day20"]
-        and statistics["zscore"] <= -1
+        int(statistics["rsi"]) <= 40
+        or statistics["ma"]["day5"] < statistics["ma"]["day20"]
+        or statistics["zscore"] <= -1
     ):
         statisstics_behavior = PURCHASE
-        behavior_reason += f"statistics {statistics} is oversold | "
+        behavior_reason += f"statistics {statistics} is oversold. it's time to buy"
     else:
-        behavior_reason += f"statistics {statistics} is normal | "
+        behavior_reason += f"statistics {statistics} is normal"
 
     # 2. meta prophet 모델의 예측값을 통해 행동을 결정한다.
     if diff_rate >= purchase_threshold:
         model_behavior = PURCHASE
-        behavior_reason += f"diff_rate {diff_rate} is over purchase_threshold {purchase_threshold}"
+        behavior_reason += f" | diff_rate {diff_rate} is over purchase_threshold {purchase_threshold}"
     elif diff_rate <= sell_threshold:
         model_behavior = SELL
-        behavior_reason += f"diff_rate {diff_rate} is under sell_threshold {sell_threshold}"
+        behavior_reason += f" | diff_rate {diff_rate} is under sell_threshold {sell_threshold}"
     else:
         model_behavior = STAY
 
