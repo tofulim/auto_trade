@@ -69,7 +69,7 @@ async def prophet(request: Request, prophet: Prophet):
 
         thread_ts = response['ts']
         channel_id = response['channel']
-
+        # TODO: post file을 router로 빼서도 사용할 수 있도록 변경
         _ = slack_bot.post_file(
             channel_id=channel_id,
             thread_ts=thread_ts,
@@ -86,9 +86,9 @@ async def buy(request: Request, buy: Buy):
     res = trader.buy_stock(
         stock_code=buy.stock_symbol,
         ord_qty=buy.ord_qty,
-        # ord_price=buy.ord_price,
-        # 장전 시간외는 전날 종가를 사용하지만 공란으로 비우지말고 0을 넣으라고 함
-        ord_price=0,
+        ord_price=buy.ord_price,
+        # 장전 시간외는 전날 종가를 사용하지만 공란으로 비우지말고 0을 넣으라고 하는데 그럼 안되고 일반 예약으로 해야 체결됨.
+        # ord_price=0,
     )
 
     text = f"""
