@@ -2,9 +2,10 @@ import datetime
 import pendulum
 
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.operators.empty import EmptyOperator
+from airflow.operators.python import PythonOperator, BranchPythonOperator
 
-from common.trader_key_update import update_trader_key
+from report import check_portfolio, report_monthly
 
 
 # KST 시간
@@ -19,10 +20,22 @@ monthly_report_dag = DAG(
     schedule_interval="0 20 28 * *",
 )
 
+check_portfolio = BranchPythonOperator(
+    task_id="check_portfolio",
+    python_callable=check_portfolio,
+    op_kwargs={"next_task_name": "report_monthly"},
+    dag=monthly_report_dag,
+)
+
 report_monthly = PythonOperator(
     task_id="report_monthly",
     python_callable=report_monthly,
     dag=monthly_report_dag,
 )
 
-report_monthly
+task_empty = EmptyOperator(
+    task_id='task_empty',
+    dag=monthly_report_dag
+)
+
+check_portfolio >> [report_monthly, task_empty]
