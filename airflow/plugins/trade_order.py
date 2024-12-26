@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import logging
@@ -50,11 +51,15 @@ def check_order_exist(next_task_name: str, **kwargs):
         return "task_empty"
 
 def check_order(next_task_name: str, **kwargs):
-    # 전체 orders를 받아온다.
+    end = datetime.datetime.now() + datetime.timedelta(days=1)
+    start = end.replace(day=1)
+
+    # 이번달 전체 orders를 받아온다.
     response = requests.post(
         url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/trader/get_orders',
         data=json.dumps({
-            "get_all": True,
+            "rsvn_ord_start_dt": start.strftime('%Y%m%d'),
+            "rsvn_ord_end_dt": end.strftime('%Y%m%d'),
         })
     )
     rsvn_orders = response.json()["output"]
