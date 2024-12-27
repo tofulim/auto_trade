@@ -119,7 +119,7 @@ class Trader:
             # 종목번호
             "PDNO": stock_code,
             # 주문구분 - 지정가(00), 시장가(01), 장전 시간외(05)
-            "ORD_DVSN_CD": "05",
+            "ORD_DVSN_CD": "00",
             # 주문 수량
             "ORD_QTY": str(ord_qty),
             # 주문 단가

@@ -49,6 +49,11 @@ class Buy(BaseModel):
     ord_price: int
 
 
+class Report(BaseModel):
+    summary: str
+    save_path: str
+
+
 @router.post("/prophet")
 async def prophet(request: Request, prophet: Prophet):
     # load portfolio from db
@@ -69,7 +74,7 @@ async def prophet(request: Request, prophet: Prophet):
 
         thread_ts = response['ts']
         channel_id = response['channel']
-
+        # TODO: post file을 router로 빼서도 사용할 수 있도록 변경
         _ = slack_bot.post_file(
             channel_id=channel_id,
             thread_ts=thread_ts,
@@ -80,15 +85,38 @@ async def prophet(request: Request, prophet: Prophet):
 
     return prophecies
 
+@router.post("/monthly_report")
+async def monthly_report(request: Request, report: Report):
+    channel_id = os.getenv("MONTHLY_REPORT_CHANNEL")
+
+    fig_save_path = report.save_path
+    text = report.summary
+    response = slack_bot.post_message(
+        channel_id=channel_id,
+        text=text,
+    )
+
+    thread_ts = response['ts']
+    channel_id = response['channel']
+    _ = slack_bot.post_file(
+        channel_id=channel_id,
+        thread_ts=thread_ts,
+        save_path=fig_save_path,
+    )
+
+    logger.inform(f"text {text} sended with {fig_save_path}", extra={"endpoint_name": request.url.path})
+
+    return 200
+
 
 @router.post("/buy")
 async def buy(request: Request, buy: Buy):
     res = trader.buy_stock(
         stock_code=buy.stock_symbol,
         ord_qty=buy.ord_qty,
-        # ord_price=buy.ord_price,
-        # 장전 시간외는 전날 종가를 사용하지만 공란으로 비우지말고 0을 넣으라고 함
-        ord_price=0,
+        ord_price=buy.ord_price,
+        # 장전 시간외는 전날 종가를 사용하지만 공란으로 비우지말고 0을 넣으라고 하는데 그럼 안되고 일반 예약으로 해야 체결됨.
+        # ord_price=0,
     )
 
     text = f"""
