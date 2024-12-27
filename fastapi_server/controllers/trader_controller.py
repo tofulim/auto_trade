@@ -49,6 +49,11 @@ class Buy(BaseModel):
     ord_price: int
 
 
+class Report(BaseModel):
+    summary: str
+    save_path: str
+
+
 @router.post("/prophet")
 async def prophet(request: Request, prophet: Prophet):
     # load portfolio from db
@@ -79,6 +84,29 @@ async def prophet(request: Request, prophet: Prophet):
     logger.inform(f"prophecies {prophecies}", extra={"endpoint_name": request.url.path})
 
     return prophecies
+
+@router.post("/monthly_report")
+async def monthly_report(request: Request, report: Report):
+    channel_id = os.getenv("MONTHLY_REPORT_CHANNEL")
+
+    fig_save_path = report.save_path
+    text = report.summary
+    response = slack_bot.post_message(
+        channel_id=channel_id,
+        text=text,
+    )
+
+    thread_ts = response['ts']
+    channel_id = response['channel']
+    _ = slack_bot.post_file(
+        channel_id=channel_id,
+        thread_ts=thread_ts,
+        save_path=fig_save_path,
+    )
+
+    logger.inform(f"text {text} sended with {fig_save_path}", extra={"endpoint_name": request.url.path})
+
+    return 200
 
 
 @router.post("/buy")
