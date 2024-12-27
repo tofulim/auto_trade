@@ -84,13 +84,7 @@ def report_monthly(**kwargs):
 
         # "2024-12-12T18:00:13.824977"
         updated_date = purchased_portfolio_row['updated_at']
-        print(f"updated_date: {updated_date}")
         purchased_date = pd.Timestamp(updated_date.split("T")[0])
-        # .tz_localize("Asia/Seoul")
-        print(type(purchased_date))
-        print(f"purchased_date: {purchased_date}")
-        print(df.index[0])
-        print(type(df.index[0]))
         purchased_row = df.loc[purchased_date]
         purchased_close = purchased_row["Close"]
 
@@ -103,6 +97,16 @@ def report_monthly(**kwargs):
         plt.text(df.index[-1], purchased_close, 'purchased', ha='left', va='center')
         plt.title(f"{ticker} Close Price Report")
 
-        save_path = f"./reports/{datetime.datetime.now().year}_{datetime.datetime.now().month}_{ticker}.png"
+        save_path = f"/home/ubuntu/zed/auto_trade/airflow/reports/{datetime.datetime.now().year}_{datetime.datetime.now().month}_{ticker}.png"
         ensure_directory_exists(save_path)
         plt.savefig(save_path)
+
+        report_summary = f"""종목 {ticker}의 최저 종가는 {min_close}이며, 구매한 가격은 {purchased_close}입니다.\n저점대비 {round((purchased_close - min_close) / min_close * 100, 2)}% 차이입니다."""
+
+        requests.post(
+            url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/trader/monthly_report',
+            data=json.dumps({
+                "save_path": save_path,
+                "summary": report_summary,
+            })
+        )
