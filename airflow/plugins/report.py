@@ -101,7 +101,7 @@ def report_monthly(**kwargs):
         ensure_directory_exists(save_path)
         plt.savefig(save_path)
 
-        report_summary = f"""종목 {ticker}의 최저 종가는 {min_close}이며, 구매한 가격은 {purchased_close}입니다.\n저점대비 {round((purchased_close - min_close) / min_close * 100, 2)}% 차이입니다."""
+        report_summary = f"""종목 {ticker}의 최저 종가는 {min_close}이며, 구매한 가격은 {purchased_close}입니다.\n저점대비 {round((purchased_close - min_close) / min_close * 100, 2)}% 가격입니다."""
 
         requests.post(
             url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/trader/monthly_report',
