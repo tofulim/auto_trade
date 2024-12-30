@@ -142,6 +142,7 @@ def execute_decisions(**kwargs):
                         "stock_symbol": stock_symbol,
                         "ord_qty": ord_qty,
                         "ord_price": last_price,
+                        "rsvn_ord_end_dt": (datetime.now() + timedelta(days=30)).strftime('%Y%m%d'),
                     })
                 )
 
