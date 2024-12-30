@@ -100,7 +100,7 @@ def change_status(**kwargs):
             sll_buy_dvsn_cd = rsvn_order["sll_buy_dvsn_cd"]
             sll_buy_dvsn_cd_str = "매도" if sll_buy_dvsn_cd == "01" else "매수"
             # 총 체결금액
-            tot_ccld_amt = rsvn_order["tot_ccld_amt"]
+            tot_ccld_amt = int(rsvn_order["tot_ccld_amt"])
             # 처리 결과
             prcs_rslt = rsvn_order["prcs_rslt"]
             # 주문 구분명
