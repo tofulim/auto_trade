@@ -92,7 +92,7 @@ class Trader:
         self.access_token = access_token
         os.environ["KIS_ACCESS_TOKEN"] = access_token
 
-    def buy_stock(self, stock_code: str, ord_qty: int, ord_price: int):
+    def buy_stock(self, stock_code: str, ord_qty: int, ord_price: int, rsvn_ord_end_dt: str = ""):
         """
         장전 시간외 매수를 통해 전날 종가 기준으로 예약 구매한다.
         해당 stock의 accum asset이 감당할 수 있을만큼 구매한다.
@@ -102,6 +102,7 @@ class Trader:
             stock_code (str): 종목코드
             ord_qty (int): 주문 개수
             ord_price (int): 주문 가격
+            rsvn_ord_end_dt (str): 예약주문종료일자
 
         Returns:
             status_code (str): 상태 코드, (200 | 4xx | 5xx)
@@ -129,6 +130,10 @@ class Trader:
             # 주문대상 잔고 구분코드 10: 현금
             "ORD_OBJT_CBLC_DVSN_CD": "10",
         }
+
+        # 예약주문종료일자 (미기입시 다음날 주문처리되고 예약주문은 종료됨)
+        if len(rsvn_ord_end_dt) != 0:
+            data["RSVN_ORD_END_DT"] = rsvn_ord_end_dt
 
         headers = {
             "Content-Type": "application/json",
