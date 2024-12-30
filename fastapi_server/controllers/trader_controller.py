@@ -47,11 +47,16 @@ class Buy(BaseModel):
     stock_symbol: str
     ord_qty: int
     ord_price: int
+    rsvn_ord_end_dt: str
 
 
 class Report(BaseModel):
     summary: str
     save_path: str
+
+class Order(BaseModel):
+    rsvn_ord_start_dt: str
+    rsvn_ord_end_dt: str
 
 
 @router.post("/prophet")
@@ -115,6 +120,7 @@ async def buy(request: Request, buy: Buy):
         stock_code=buy.stock_symbol,
         ord_qty=buy.ord_qty,
         ord_price=buy.ord_price,
+        rsvn_ord_end_dt=buy.rsvn_ord_end_dt,
         # 장전 시간외는 전날 종가를 사용하지만 공란으로 비우지말고 0을 넣으라고 하는데 그럼 안되고 일반 예약으로 해야 체결됨.
         # ord_price=0,
     )
@@ -180,14 +186,14 @@ async def sell(request: Request):
 
 
 @router.post("/get_orders")
-async def get_orders(request: Request, rsvn_ord_start_dt: str, rsvn_ord_end_dt: str):
+async def get_orders(request: Request, order: Order):
     res = trader.get_reserved_orders(
-        rsvn_ord_start_dt=rsvn_ord_start_dt,
-        rsvn_ord_end_dt=rsvn_ord_end_dt,
+        rsvn_ord_start_dt=order.rsvn_ord_start_dt,
+        rsvn_ord_end_dt=order.rsvn_ord_end_dt,
     )
 
     logger.inform(
-        f"get orders from {rsvn_ord_start_dt} - {rsvn_ord_end_dt} | Status {res['status_code']} | Error {res['error']}",
+        f"get orders from {order.rsvn_ord_start_dt} - {order.rsvn_ord_end_dt} | Status {res['status_code']} | Error {res['error']}",
         extra={"endpoint_name": request.url.path}
     )
 
