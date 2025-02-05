@@ -5,7 +5,7 @@ Auto Trade는 포트폴리오를 구성한 뒤, 이들 종목에 대해 매월 �
 
 저는 주식 투자를 하고 싶었지만 매일 차트를 보며 매수/매도 시점을 잡느라 에너지를 쓰고 싶지 않았습니다.
 
-또한 제게는 시장의 흐름을 읽을 정도의 경제적 지식도 없습니다. 
+또한 제게는 시장의 흐름을 읽을 정도의 경제적 지식도 없습니다.
 
 적립식 장기투자이니 매수는 항상 발생합니다. 다만 언제 사느냐가 중요하겠지요.
 
@@ -64,10 +64,10 @@ fastapi 서버와 각 airflow scheduler와 webserver는 각각의 tmux 세션에
 
 ### prerequisite
 - 환경
-    - 본 프로젝트는 EC2 free tier 장비에서 수행되었습니다. 
+    - 본 프로젝트는 EC2 free tier 장비에서 수행되었습니다.
 	    - t2.micro (1 vCPU / 1GB RAM / 25 GB storage)
 	- swap memory를 사용하지 않으면 airflow를 작동시키는 데 어려움이 있을 수 있습니다.
-    
+
 
     ```
     # check swap memory
