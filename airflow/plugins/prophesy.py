@@ -9,6 +9,7 @@ import yfinance as yf
 
 from const import STAY, PURCHASE, SELL
 from common.statistics import get_rsi, get_moving_averages, get_zscore
+from common.calc_business_day import is_ktc_business_day
 
 dotenv.load_dotenv(f"/home/ubuntu/zed/auto_trade/config/prod.env")
 logger = logging.getLogger("api_logger")
@@ -142,7 +143,7 @@ def execute_decisions(**kwargs):
                         "stock_symbol": stock_symbol,
                         "ord_qty": ord_qty,
                         "ord_price": last_price,
-                        "rsvn_ord_end_dt": (datetime.now() + timedelta(days=30)).strftime('%Y%m%d'),
+                        "rsvn_ord_end_dt": _get_end_dt().strftime('%Y%m%d'),
                     })
                 )
 
@@ -175,6 +176,16 @@ def execute_decisions(**kwargs):
 
 
         logger.info(f"stock_symbol: {stock_symbol} - behavior {behavior}'s result is {result.json()}")
+
+
+def _get_end_dt():
+    for days in range(30, 0, -1):
+        candidate_end_dt = (datetime.now() + timedelta(days=days))
+        if is_ktc_business_day(execution_date=candidate_end_dt, is_next=False):
+            end_dt = candidate_end_dt
+            break
+
+    return end_dt
 
 
 def _get_behavior(
