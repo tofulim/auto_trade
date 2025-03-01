@@ -41,6 +41,7 @@ $ conda create -n auto-trade python=3.9
 $ conda activate auto-trade
 
 $ pip3 install -r requirements.txt
+$ sh download_airflow.sh
 ```
 ## Run
 Open a terminal and run:
