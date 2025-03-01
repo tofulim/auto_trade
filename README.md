@@ -31,7 +31,7 @@ Auto Trade는 포트폴리오를 구성한 뒤, 이들 종목에 대해 매월 �
 	    - ex2) 매일 내 포트폴리오 종목들의 한달 뒤 종가를 예측한다.
 	- 되도록 모든 action은 API를 호출해 수행합니다.
 
-## Architecture
+## Architecturehttps://github.com/tofulim/auto_trade/issues
 ![](https://i.imgur.com/0eN6xkN.png)
 
 ## Installation
@@ -42,6 +42,7 @@ $ conda activate auto-trade
 
 $ pip3 install -r requirements.txt
 $ sh download_airflow.sh
+$ pip3 install -e .
 ```
 ## Run
 Open a terminal and run:
