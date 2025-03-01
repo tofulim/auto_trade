@@ -77,7 +77,7 @@ fastapi 서버와 각 airflow scheduler와 webserver는 각각의 tmux 세션에
     $ sudo fallocate -l 2g /swapfile
 
 	# change permission
-	$ sudo chmod 600 / swapfile
+	$ sudo chmod 600 /swapfile
 
 	# apply swapfile
 	$ sudo mkswap /swapfile
