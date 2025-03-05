@@ -84,7 +84,7 @@ async def prophet(request: Request, prophet: Prophet):
             channel_id=channel_id,
             thread_ts=thread_ts,
             file_path=fig_save_path,
-            filename=f"prop_{stock_symbol}",
+            filename=f"prop_{stock_symbol}.jpg",
         )
 
     logger.inform(f"prophecies {prophecies}", extra={"endpoint_name": request.url.path})
