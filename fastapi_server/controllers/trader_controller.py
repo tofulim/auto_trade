@@ -83,7 +83,8 @@ async def prophet(request: Request, prophet: Prophet):
         _ = slack_bot.post_file(
             channel_id=channel_id,
             thread_ts=thread_ts,
-            save_path=fig_save_path,
+            file_path=fig_save_path,
+            filename=f"prop_{stock_symbol}.jpg",
         )
 
     logger.inform(f"prophecies {prophecies}", extra={"endpoint_name": request.url.path})
@@ -106,7 +107,8 @@ async def monthly_report(request: Request, report: Report):
     _ = slack_bot.post_file(
         channel_id=channel_id,
         thread_ts=thread_ts,
-        save_path=fig_save_path,
+        file_path=fig_save_path,
+        filename="monthly_report",
     )
 
     logger.inform(f"text {text} sended with {fig_save_path}", extra={"endpoint_name": request.url.path})
