@@ -17,7 +17,7 @@ def get_moving_averages(target_df):
 
 def get_zscore(target_df, n_days: int):
     target_close_series = target_df.tail(n_days)["Close"]
-    today_close, close_mean, close_std = target_close_series[-1], target_close_series.mean(), target_close_series.std()
+    today_close, close_mean, close_std = target_close_series.iloc[-1], target_close_series.mean(), target_close_series.std()
 
     zscore = (today_close - close_mean) / close_std
     return float(round(zscore))
