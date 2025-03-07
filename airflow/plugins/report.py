@@ -80,13 +80,13 @@ def report_monthly(**kwargs):
         min_close_row = df.loc[df["Close"].idxmin()]
         # "2024-12-20T00:00:00.000000000"
         # min_close_date = str(min_close_row.index.values[0])
-        min_close = min_close_row["Close"]
+        min_close = min_close_row["Close"].values[0][0]
 
         # "2024-12-12T18:00:13.824977"
         updated_date = purchased_portfolio_row['updated_at']
         purchased_date = pd.Timestamp(updated_date.split("T")[0])
         purchased_row = df.loc[purchased_date]
-        purchased_close = purchased_row["Close"]
+        purchased_close = purchased_row["Close"][0]
 
         # 플롯 생성
         plt.figure(figsize=(12, 6))
