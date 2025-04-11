@@ -5,9 +5,9 @@ import inject
 
 from fastapi import APIRouter
 
-from fastapi_server.database.database import Database
-from fastapi_server.entity.asset import Asset, AssetBase
-from fastapi_server.repository.asset_repository_service import AssetRepositoryService
+from database.database import Database
+from entity.asset import Asset, AssetBase
+from repository.asset_repository_service import AssetRepositoryService
 
 router = APIRouter(
     prefix="/v1/asset",

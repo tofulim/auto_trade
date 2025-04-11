@@ -2,8 +2,8 @@ import logging
 import inject
 
 from fastapi import APIRouter, Request
-from fastapi_server.slack import KISSlackBot
-from fastapi_server.entity.slack_base import SlackBase
+from slack import KISSlackBot
+from entity.slack_base import SlackBase
 
 
 router = APIRouter(

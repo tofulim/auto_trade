@@ -7,9 +7,9 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Request
 from pydantic import Field, BaseModel
 
-from fastapi_server.database.database import Database
-from fastapi_server.repository.portfolio_repository_service import PortfolioRepositoryService
-from fastapi_server.slack import KISSlackBot
+from database.database import Database
+from repository.portfolio_repository_service import PortfolioRepositoryService
+from slack import KISSlackBot
 from prophecy import ProphetModel
 from trader import Trader
 
