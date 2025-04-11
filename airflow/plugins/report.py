@@ -8,7 +8,7 @@ import pandas as pd
 import yfinance as yf
 import matplotlib.pyplot as plt
 
-dotenv.load_dotenv(f"/home/ubuntu/zed/auto_trade/config/prod.env")
+dotenv.load_dotenv(f"/opt/airflow/config/prod.env")
 logger = logging.getLogger("api_logger")
 
 
@@ -97,7 +97,7 @@ def report_monthly(**kwargs):
         plt.text(df.index[-1], purchased_close, 'purchased', ha='left', va='center')
         plt.title(f"{ticker} Close Price Report")
 
-        save_path = f"/home/ubuntu/zed/auto_trade/airflow/reports/{datetime.datetime.now().year}_{datetime.datetime.now().month}_{ticker}.png"
+        save_path = f"/shared/reports/{datetime.datetime.now().year}_{datetime.datetime.now().month}_{ticker}.png"
         ensure_directory_exists(save_path)
         plt.savefig(save_path)
 

@@ -11,7 +11,7 @@ from const import STAY, PURCHASE, SELL
 from common.statistics import get_rsi, get_moving_averages, get_zscore
 from common.calc_business_day import is_ktc_business_day
 
-dotenv.load_dotenv(f"/home/ubuntu/zed/auto_trade/config/prod.env")
+dotenv.load_dotenv(f"/opt/airflow/config/prod.env")
 logger = logging.getLogger("api_logger")
 
 

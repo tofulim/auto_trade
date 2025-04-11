@@ -5,7 +5,7 @@ import holidays
 from datetime import datetime, timedelta, date
 
 
-dotenv.load_dotenv(f"/home/ubuntu/zed/auto_trade/config/prod.env")
+dotenv.load_dotenv(f"/opt/airflow/config/prod.env")
 logger = logging.getLogger("api_logger")
 
 
