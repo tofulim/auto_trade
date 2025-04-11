@@ -6,8 +6,8 @@ Reviewer:
 from datetime import datetime, timedelta
 from sqlmodel import Session, select
 
-from fastapi_server.database.database import Database
-from fastapi_server.entity.portfolio import Portfolio
+from database.database import Database
+from entity.portfolio import Portfolio
 
 
 class PortfolioRepositoryService:

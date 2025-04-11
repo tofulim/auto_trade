@@ -1,7 +1,7 @@
 from sqlmodel import create_engine, SQLModel
 # create all이 있는 곳에 table import 문이 있어야 테이블을 자동생성한다.
-from fastapi_server.entity.asset import Asset # noqa
-from fastapi_server.entity.portfolio import Portfolio # noqa
+from entity.asset import Asset # noqa
+from entity.portfolio import Portfolio # noqa
 
 
 class Database:

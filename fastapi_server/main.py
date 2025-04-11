@@ -1,11 +1,11 @@
 import os
 import dotenv
-from fastapi_server.initializer import Initializer
-from fastapi_server.utils import FastAPIServer, get_controllers
-from fastapi_server.utils import initialize_api_logger
+from initializer import Initializer
+from utils import FastAPIServer, get_controllers
+from utils import initialize_api_logger
 
 
-dotenv.load_dotenv(f"/home/ubuntu/zed/auto_trade/config/prod.env")
+dotenv.load_dotenv(f"./config/prod.env")
 initialize_api_logger()
 Initializer()
 
@@ -14,8 +14,8 @@ app = server.app
 
 modules = get_controllers(
     [
-        f"fastapi_server.controllers.{name.strip().replace('.py', '')}"
-        for name in os.listdir("./fastapi_server/controllers")
+        f"controllers.{name.strip().replace('.py', '')}"
+        for name in os.listdir("./controllers")
         if "controller.py" in name
     ]
 )
