@@ -77,7 +77,7 @@ x-airflow-common:
   volumes:
     - ${AIRFLOW_PROJ_DIR:-./airflow}/:/opt/airflow
     - ${AIRFLOW_PROJ_DIR:-./shared}/:/shared
-  user: "${AIRFLOW_UID:-50000}:0"
+  user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0}"
   depends_on:
     &airflow-common-depends-on
     redis:
@@ -122,8 +122,8 @@ services:
       - "8080:8080"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
+      interval: 60s
+      timeout: 20s
       retries: 5
       start_period: 30s
     restart: always
@@ -137,8 +137,8 @@ services:
     command: scheduler
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
-      interval: 30s
-      timeout: 10s
+      interval: 60s
+      timeout: 20s
       retries: 5
       start_period: 30s
     restart: always
@@ -155,8 +155,8 @@ services:
       test:
         - "CMD-SHELL"
         - 'celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}" || celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
-      interval: 30s
-      timeout: 10s
+      interval: 60s
+      timeout: 20s
       retries: 5
       start_period: 30s
     environment:
@@ -164,6 +164,7 @@ services:
       # Required to handle warm shutdown of the celery workers properly
       # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
       DUMB_INIT_SETSID: "0"
+      C_FORCE_ROOT: 'true'
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
@@ -175,8 +176,8 @@ services:
     command: triggerer
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
-      interval: 30s
-      timeout: 10s
+      interval: 60s
+      timeout: 20s
       retries: 5
       start_period: 30s
     restart: always
