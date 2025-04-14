@@ -1,5 +1,5 @@
 # docker build -f fastapi_server/dockerfile -t fastapi-server .
-# docker run -it -p 8000:8000 -v ./shared:/shared fastapi-server
+# docker run -it -p 8000:8000 -v ./shared:/shared -v ./fastapi_server/database:/database fastapi-server
 FROM python:3.9
 
 COPY ./fastapi_server/requirements.txt ./requirements.txt
