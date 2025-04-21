@@ -2,9 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="auto_trade",
-    packages=find_packages(
-        include=["auto_trade", "auto_trade.*"],
-    ),
+    packages=find_packages(include=["auto_trade", "auto_trade.*"]),
     python_requires=">=3.6.0",
     classifiers=[
         "Programming Language :: Python :: 3.8",

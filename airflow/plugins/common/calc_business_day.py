@@ -1,11 +1,11 @@
-import os
 import logging
+import os
+from datetime import date, datetime
+
 import dotenv
 import holidays
-from datetime import datetime, timedelta, date
 
-
-dotenv.load_dotenv(f"/opt/airflow/config/prod.env")
+dotenv.load_dotenv("/opt/airflow/config/prod.env")
 logger = logging.getLogger("api_logger")
 
 
@@ -19,6 +19,7 @@ def is_holiday(curr_datetime: str):
         return True
     else:
         return False
+
 
 def is_ktc_business_day(execution_date, is_next: bool = False):
     """한국 영업일 확인
@@ -36,7 +37,6 @@ def is_ktc_business_day(execution_date, is_next: bool = False):
         curr_date = datetime.strptime(execution_date, "%Y-%m-%d").date()
     else:
         curr_date = execution_date.date()
-
 
     if curr_date.weekday() < 5 and is_holiday(curr_date) is False:
         flag = True
@@ -56,10 +56,7 @@ def check_date(execution_date: datetime, next_task_name: str, next_ds: str, use_
 
     """
     # 정상 영업일의 경우 다음 과정을 수행한다.
-    logger.info(
-            f"input execution_date is {execution_date} and next_ds is {next_ds}. next_ds type is {type(next_ds)}",
-        )
-
+    logger.info(f"input execution_date is {execution_date} and next_ds is {next_ds}. next_ds type is {type(next_ds)}")
 
     if use_next_ds is True:
         run_date = next_ds
@@ -67,15 +64,11 @@ def check_date(execution_date: datetime, next_task_name: str, next_ds: str, use_
         run_date = execution_date
 
     if is_ktc_business_day(run_date, is_next=use_next_ds) is True:
-        logger.info(
-            f"run next task {next_task_name}",
-        )
+        logger.info("run next task {next_task_name}")
         return next_task_name
     else:
-        logger.info(
-            f"run empty",
-        )
-        return 'task_empty'
+        logger.info("run empty")
+        return "task_empty"
 
 
 def check_auto_payment_date(execution_date: datetime, next_task_name: str, next_ds: str, use_next_ds: bool = False):
@@ -92,9 +85,7 @@ def check_auto_payment_date(execution_date: datetime, next_task_name: str, next_
 
     """
     # 정상 영업일의 경우 다음 과정을 수행한다.
-    logger.info(
-            f"input execution_date is {execution_date} and next_ds is {next_ds}. next_ds type is {type(next_ds)}",
-        )
+    logger.info(f"input execution_date is {execution_date} and next_ds is {next_ds}. next_ds type is {type(next_ds)}")
 
     auto_payment_day: int = int(os.getenv("AUTO_PAYMENT_DAY", 11))
 
@@ -106,10 +97,8 @@ def check_auto_payment_date(execution_date: datetime, next_task_name: str, next_
 
     # 애초에 아직 자동이체일보다도(defautl: 11) 작은 날짜인 경우
     if run_date.day < auto_payment_day:
-        logger.info(
-            f"today is not ready before auto_payment_day {auto_payment_day} run empty",
-        )
-        return 'task_empty'
+        logger.info(f"today is not ready before auto_payment_day {auto_payment_day} run empty")
+        return "task_empty"
     # 자동이체일을 넘은 경우
     else:
         # 자동이체날 이후 가장 가까운 다음 영업일을 구한다. (자동이체날 정확하게 이체가 되지 않기 때문)
@@ -119,9 +108,7 @@ def check_auto_payment_date(execution_date: datetime, next_task_name: str, next_
             curr_datetime = datetime(year, month, day)
 
             if is_ktc_business_day(curr_datetime) is True:
-                logger.info(
-                    f"this month is {run_date.month}. and safe payment day is {curr_datetime}",
-                )
+                logger.info(f"this month is {run_date.month}. and safe payment day is {curr_datetime}")
                 safe_payment_day = curr_datetime.day
                 break
 
@@ -130,22 +117,14 @@ def check_auto_payment_date(execution_date: datetime, next_task_name: str, next_
         # 오늘이 자동이체일 이후 가장 가까운 다음 영업일인 경우
         # 예수금을 조회해 포트폴리오를 갱신한다.
         if safe_payment_day == run_date.day:
-            logger.info(
-                f"today is the day! run next task {next_task_name}",
-            )
+            logger.info(f"today is the day! run next task {next_task_name}")
             return next_task_name
         else:
-            logger.info(
-            "today is not the day! run empty",
-            )
-            return 'task_empty'
+            logger.info("today is not the day! run empty")
+            return "task_empty"
 
 
 if __name__ == "__main__":
 
-    res = check_auto_payment_date(
-        execution_date=datetime(2024, 8, 10),
-        next_task_name="next",
-        next_ds="f",
-    )
+    res = check_auto_payment_date(execution_date=datetime(2024, 8, 10), next_task_name="next", next_ds="f")
     print(res)

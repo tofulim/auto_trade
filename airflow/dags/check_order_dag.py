@@ -1,11 +1,12 @@
 import datetime
 import logging
+
 import pendulum
+from trade_order import change_status, check_order, check_order_exist
 
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
-from airflow.operators.python import PythonOperator, BranchPythonOperator
-from trade_order import check_order_exist, check_order, change_status
+from airflow.operators.python import BranchPythonOperator, PythonOperator
 
 # Configure logger.py correctly
 # Logger
@@ -31,7 +32,7 @@ check_order_dag = DAG(
 
 # 주문한 종목이 있다면 status를 확인한다.
 check_order_exist = BranchPythonOperator(
-    task_id='check_order_exist',
+    task_id="check_order_exist",
     python_callable=check_order_exist,
     op_kwargs={"next_task_name": "check_order"},
     dag=check_order_dag,
@@ -49,16 +50,10 @@ check_order = BranchPythonOperator(
 
 # 주문 db 반영
 change_status = PythonOperator(
-    task_id="change_status",
-    python_callable=change_status,
-    provide_context=True,
-    dag=check_order_dag,
+    task_id="change_status", python_callable=change_status, provide_context=True, dag=check_order_dag
 )
 
-task_empty = EmptyOperator(
-    task_id='task_empty',
-    dag=check_order_dag
-)
+task_empty = EmptyOperator(task_id="task_empty", dag=check_order_dag)
 
 # 매매 주문 내역 확인하고 존재하면 상태 확인
 check_order_exist >> [check_order, task_empty]

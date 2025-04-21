@@ -3,11 +3,12 @@ Author: zed.ai
 Reviewer:
 2024.05.22
 """
+
 from datetime import datetime, timedelta
-from sqlmodel import Session, select
 
 from database.database import Database
 from entity.portfolio import Portfolio
+from sqlmodel import Session, select
 
 
 class PortfolioRepositoryService:

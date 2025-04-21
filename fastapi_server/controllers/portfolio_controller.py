@@ -1,20 +1,14 @@
 import logging
 from http.client import HTTPException
-from typing import Union
 
 import inject
-
-from fastapi import APIRouter, Request
-from pydantic import BaseModel, Field
-
 from database.database import Database
 from entity.portfolio import Portfolio, PortfolioBase
+from fastapi import APIRouter, Request
+from pydantic import BaseModel, Field
 from repository.portfolio_repository_service import PortfolioRepositoryService
 
-router = APIRouter(
-    prefix="/v1/portfolio",
-    tags=["Portfolio"],
-)
+router = APIRouter(prefix="/v1/portfolio", tags=["Portfolio"])
 
 db = inject.instance(Database)
 portfolio_repository_service = inject.instance(PortfolioRepositoryService)
@@ -65,7 +59,9 @@ def update_portfolio(stock_symbol: str, portfolio: PortfolioBase, request: Reque
 def update_portfolio_with_dict(stock_symbol: str, update_dict: dict, request: Request):
     portfolio_repository_service.update_fields(stock_symbol=stock_symbol, update_data=update_dict)
 
-    logger.inform(f"Portfolio {stock_symbol} updated with update_dict{update_dict}", extra={"endpoint_name": request.url.path})
+    logger.inform(
+        f"Portfolio {stock_symbol} updated with update_dict{update_dict}", extra={"endpoint_name": request.url.path}
+    )
     return {"message": "Portfolio updated successfully"}
 
 

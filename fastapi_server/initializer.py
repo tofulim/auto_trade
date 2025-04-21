@@ -1,9 +1,10 @@
 import os
+
 import inject
 from database.database import Database
+from prophecy import ProphetModel
 from repository.asset_repository_service import AssetRepositoryService
 from repository.portfolio_repository_service import PortfolioRepositoryService
-from prophecy import ProphetModel
 from slack import KISSlackBot
 from trader import Trader
 

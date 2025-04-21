@@ -2,17 +2,12 @@ import logging
 from http.client import HTTPException
 
 import inject
-
-from fastapi import APIRouter
-
 from database.database import Database
 from entity.asset import Asset, AssetBase
+from fastapi import APIRouter
 from repository.asset_repository_service import AssetRepositoryService
 
-router = APIRouter(
-    prefix="/v1/asset",
-    tags=["Asset"],
-)
+router = APIRouter(prefix="/v1/asset", tags=["Asset"])
 
 db = inject.instance(Database)
 asset_repository_service = inject.instance(AssetRepositoryService)

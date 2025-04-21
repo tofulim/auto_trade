@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from sqlmodel import SQLModel, Field
+from sqlmodel import Field, SQLModel
 
 
 def get_default_updated_at():
@@ -10,7 +10,7 @@ def get_default_updated_at():
 class PortfolioBase(SQLModel):
     stock_symbol: str
     ratio: float
-    country: str = Field(default='ks', nullable=False)
+    country: str = Field(default="ks", nullable=False)
     month_purchase_flag: bool = Field(default=False, nullable=False)
     month_budget: int = Field(default=0, nullable=False)
     reserved_budget: int = Field(default=0, nullable=False)

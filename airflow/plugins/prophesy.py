@@ -1,17 +1,16 @@
-
 import json
-import os
 import logging
+import os
+from datetime import datetime, timedelta
+
 import dotenv
 import requests
-from datetime import datetime, timedelta
 import yfinance as yf
-
-from const import STAY, PURCHASE, SELL
-from common.statistics import get_rsi, get_moving_averages, get_zscore
 from common.calc_business_day import is_ktc_business_day
+from common.statistics import get_moving_averages, get_rsi, get_zscore
+from const import PURCHASE, SELL, STAY
 
-dotenv.load_dotenv(f"/opt/airflow/config/prod.env")
+dotenv.load_dotenv("/opt/airflow/config/prod.env")
 logger = logging.getLogger("api_logger")
 
 
@@ -32,26 +31,16 @@ def prophesy_portfolio(**kwargs):
     # 0. db에서 Portfolio table을 가져온다.
     response = requests.post(
         url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/get',
-        data=json.dumps({
-            "get_all": True,
-        })
+        data=json.dumps({"get_all": True}),
     )
     portfolio_rows = response.json()
-    kwargs['task_instance'].xcom_push(key='portfolio_rows', value=portfolio_rows)
-    stock_symbol2month_budget = {
-        row["stock_symbol"]: row["month_budget"]
-        for row in portfolio_rows
-    }
-    stock_symbol2order_status = {
-        row["stock_symbol"]: row["order_status"]
-        for row in portfolio_rows
-    }
+    kwargs["task_instance"].xcom_push(key="portfolio_rows", value=portfolio_rows)
+    stock_symbol2month_budget = {row["stock_symbol"]: row["month_budget"] for row in portfolio_rows}
+    stock_symbol2order_status = {row["stock_symbol"]: row["order_status"] for row in portfolio_rows}
     # 1. 주어진 종목들에 대한 경향 예측을 수행한다.
     response = requests.post(
         url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/trader/prophet',
-        data=json.dumps({
-            "stock_symbols": list(stock_symbol2month_budget.keys()),
-        })
+        data=json.dumps({"stock_symbols": list(stock_symbol2month_budget.keys())}),
     )
     stock_symbol2prophecy = response.json()
 
@@ -77,16 +66,14 @@ def prophesy_portfolio(**kwargs):
         print(f"channel_id: {channel_id}")
         response = requests.post(
             url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/slackbot/send_message',
-            data=json.dumps({
-                "channel_id": channel_id,
-                "input_text": input_text,
-            }),
+            data=json.dumps({"channel_id": channel_id, "input_text": input_text}),
         )
 
-    kwargs['task_instance'].xcom_push(key='portfolio_behavior_decisions', value=portfolio_behavior_decisions)
+    kwargs["task_instance"].xcom_push(key="portfolio_behavior_decisions", value=portfolio_behavior_decisions)
     logger.info(f"portfolio_behavior_decisions: {portfolio_behavior_decisions}")
 
     return True
+
 
 def _get_statistics(stock_symbol: str, n_days: int = 20):
     """주식 종목의 통계치를 가져온다.
@@ -100,19 +87,13 @@ def _get_statistics(stock_symbol: str, n_days: int = 20):
         statistics (dict): 종목의 통계치
 
     """
-    end = datetime.now() + timedelta(days=1)
+    # end = datetime.now() + timedelta(days=1)
     price_df = yf.download(stock_symbol)
-
 
     day5_close_avg, day10_close_avg, day20_close_avg, day60_close_avg = get_moving_averages(price_df)
     statistics = {
         "rsi": get_rsi(target_df=price_df, n_days=n_days),
-        "ma": {
-            "day5": day5_close_avg,
-            "day10": day10_close_avg,
-            "day20": day20_close_avg,
-            "day60": day60_close_avg,
-        },
+        "ma": {"day5": day5_close_avg, "day10": day10_close_avg, "day20": day20_close_avg, "day60": day60_close_avg},
         "zscore": get_zscore(target_df=price_df, n_days=n_days),
     }
 
@@ -125,7 +106,7 @@ def execute_decisions(**kwargs):
     """
 
     # 1. 앞서 구한 할당/구매 안한 포트폴리오 의사결정 가져오기
-    portfolio_behavior_decisions = kwargs['task_instance'].xcom_pull(key='portfolio_behavior_decisions')
+    portfolio_behavior_decisions = kwargs["task_instance"].xcom_pull(key="portfolio_behavior_decisions")
     logger.info(f"portfolio_behavior_decisions: {portfolio_behavior_decisions}")
     # 2. 결정 수행
     for portfolio_behavior_decision in portfolio_behavior_decisions:
@@ -139,48 +120,43 @@ def execute_decisions(**kwargs):
             if ord_qty > 0:
                 result = requests.post(
                     url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/trader/buy',
-                    data=json.dumps({
-                        "stock_symbol": stock_symbol,
-                        "ord_qty": ord_qty,
-                        "ord_price": last_price,
-                        "rsvn_ord_end_dt": _get_end_dt().strftime('%Y%m%d'),
-                    })
+                    data=json.dumps(
+                        {
+                            "stock_symbol": stock_symbol,
+                            "ord_qty": ord_qty,
+                            "ord_price": last_price,
+                            "rsvn_ord_end_dt": _get_end_dt().strftime("%Y%m%d"),
+                        }
+                    ),
                 )
 
                 # 구매는 다음 DAG에서 수행하므로 distribute DAG에서는 예약금과 order_status를 변경한다
-                update_dict = {
-                    "reserved_budget": ord_qty * last_price,
-                    "order_status": "O",
-                }
+                update_dict = {"reserved_budget": ord_qty * last_price, "order_status": "O"}
 
                 response = requests.put(
                     url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/put_fields?stock_symbol={stock_symbol}',
                     data=json.dumps(update_dict),
                 )
-                logger.info(f"stock_symbol: {stock_symbol} - behavior {behavior}'s result has saved at db with {response.json()}")
-
+                logger.info(
+                    f"stock_symbol: {stock_symbol} - behavior {behavior}'s result has saved at db with {response.json()}"
+                )
 
         elif behavior == SELL:
             if ord_qty > 0:
                 result = requests.post(
                     url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/trader/sell',
-                    data=json.dumps({
-                        "stock_symbol": stock_symbol,
-                        "ord_qty": ord_qty,
-                        "ord_price": last_price,
-                    })
+                    data=json.dumps({"stock_symbol": stock_symbol, "ord_qty": ord_qty, "ord_price": last_price}),
                 )
 
         else:
             raise ValueError("behavior must one of (STAY | PURCHASE | SELL)")
-
 
         logger.info(f"stock_symbol: {stock_symbol} - behavior {behavior}'s result is {result.json()}")
 
 
 def _get_end_dt():
     for days in range(30, 0, -1):
-        candidate_end_dt = (datetime.now() + timedelta(days=days))
+        candidate_end_dt = datetime.now() + timedelta(days=days)
         if is_ktc_business_day(execution_date=candidate_end_dt, is_next=False):
             end_dt = candidate_end_dt
             break
@@ -189,11 +165,7 @@ def _get_end_dt():
 
 
 def _get_behavior(
-    diff_rate: float,
-    statistics: dict,
-    order_status: str,
-    purchase_threshold: float,
-    sell_threshold: float,
+    diff_rate: float, statistics: dict, order_status: str, purchase_threshold: float, sell_threshold: float
 ):
     """행동 결정
 
@@ -213,11 +185,7 @@ def _get_behavior(
     # 종목 상태가 예약 매수가 진행된 적이 없거나 실패한 상태일 때 수행한다.
     statisstics_behavior, model_behavior = STAY, STAY
     # 1. rsi, ma, zscore로 행동을 결정한다.
-    if (
-        statistics["rsi"] >= 70
-        and statistics["ma"]["day5"] > statistics["ma"]["day20"]
-        and statistics["zscore"] >= 1
-    ):
+    if statistics["rsi"] >= 70 and statistics["ma"]["day5"] > statistics["ma"]["day20"] and statistics["zscore"] >= 1:
         statisstics_behavior = SELL
         behavior_reason += f"statistics {statistics} is overbought. it's time to sell"
     # 구매에는 보다 유연한 기준을 적용한다.

@@ -1,12 +1,13 @@
 import datetime
 import logging
+
 import pendulum
+from common.calc_business_day import check_date
+from prophesy import execute_decisions, prophesy_portfolio
 
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
-from airflow.operators.python import PythonOperator, BranchPythonOperator
-from prophesy import prophesy_portfolio, execute_decisions
-from common.calc_business_day import check_date
+from airflow.operators.python import BranchPythonOperator, PythonOperator
 
 # Configure logger.py correctly
 # Logger
@@ -27,7 +28,7 @@ prophesy_n_make_decision_dag = DAG(
 )
 
 check_date = BranchPythonOperator(
-    task_id='check_date',
+    task_id="check_date",
     python_callable=check_date,
     op_kwargs={"next_task_name": "prophesy_portfolio", "use_next_ds": True},
     dag=prophesy_n_make_decision_dag,
@@ -36,9 +37,7 @@ check_date = BranchPythonOperator(
 
 # 종목 경향 예측 및 매매 결정
 prophesy_portfolio = PythonOperator(
-    task_id="prophesy_portfolio",
-    python_callable=prophesy_portfolio,
-    dag=prophesy_n_make_decision_dag,
+    task_id="prophesy_portfolio", python_callable=prophesy_portfolio, dag=prophesy_n_make_decision_dag
 )
 
 # 결정된 매매 수행
@@ -49,10 +48,7 @@ execute_decisions = PythonOperator(
     dag=prophesy_n_make_decision_dag,
 )
 
-task_empty = EmptyOperator(
-    task_id='task_empty',
-    dag=prophesy_n_make_decision_dag
-)
+task_empty = EmptyOperator(task_id="task_empty", dag=prophesy_n_make_decision_dag)
 
 # 영업일인지 확인하고 주말 및 공휴일이면 DAG 종료
 check_date >> [prophesy_portfolio, task_empty]
