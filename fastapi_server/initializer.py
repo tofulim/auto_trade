@@ -1,10 +1,11 @@
 import os
+
 import inject
-from fastapi_server.database.database import Database
-from fastapi_server.repository.asset_repository_service import AssetRepositoryService
-from fastapi_server.repository.portfolio_repository_service import PortfolioRepositoryService
+from database.database import Database
 from prophecy import ProphetModel
-from fastapi_server.slack import KISSlackBot
+from repository.asset_repository_service import AssetRepositoryService
+from repository.portfolio_repository_service import PortfolioRepositoryService
+from slack import KISSlackBot
 from trader import Trader
 
 

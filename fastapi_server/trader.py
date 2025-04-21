@@ -1,7 +1,8 @@
 import json
 import os
-import requests
+
 import dotenv
+import requests
 
 
 class Trader:
@@ -9,6 +10,7 @@ class Trader:
     한국투자증권의 트레이딩 API를 통해 매매하기 위해 필요한 method들이 포함된 클래스이다.
     인증 / 매입 / 매각 을 목적으로 한다.
     """
+
     def __init__(self, app_key: str, app_secret: str, url_base: str, mode: str):
         """
         거래 API 초기화
@@ -38,20 +40,14 @@ class Trader:
 
         """
         api = "oauth2/tokenP"
-        body = {
-            "grant_type": "client_credentials",
-            "appkey": self.app_key,
-            "appsecret": self.app_secret,
-        }
+        body = {"grant_type": "client_credentials", "appkey": self.app_key, "appsecret": self.app_secret}
 
         try:
             response = requests.post(
-                url=f"{self.url_base}:{self.port}/{api}",
-                headers=self.headers,
-                data=json.dumps(body),
+                url=f"{self.url_base}:{self.port}/{api}", headers=self.headers, data=json.dumps(body)
             )
             if response.status_code != 200:
-                raise Exception(f"Failed to get access token it was already generated.")
+                raise Exception("Failed to get access token it was already generated.")
             else:
                 self.access_token = response.json()["access_token"]
         except Exception:
@@ -71,18 +67,10 @@ class Trader:
 
         """
         api = "uapi/hashkey"
-        headers = {
-            'content-Type': 'application/json',
-            'appKey': self.app_key,
-            'appSecret': self.app_secret,
-        }
+        headers = {"content-Type": "application/json", "appKey": self.app_key, "appSecret": self.app_secret}
         port = self.port
 
-        response = requests.post(
-            url=f"{self.url_base}:{port}/{api}",
-            headers=headers,
-            data=json.dumps(datas)
-        )
+        response = requests.post(url=f"{self.url_base}:{port}/{api}", headers=headers, data=json.dumps(datas))
         hashkey = response.json()["HASH"]
 
         return hashkey
@@ -143,7 +131,7 @@ class Trader:
             "tr_id": tr_id,
             # 개인
             "custtype": "P",
-            "hashkey": self.hashkey(data)
+            "hashkey": self.hashkey(data),
         }
 
         return self._request(api, data, headers)
@@ -189,7 +177,7 @@ class Trader:
             "tr_id": tr_id,
             # 개인
             "custtype": "P",
-            "hashkey": self.hashkey(data)
+            "hashkey": self.hashkey(data),
         }
 
         return self._request(api, data, headers)
@@ -200,17 +188,11 @@ class Trader:
         try:
             if method == "POST":
                 response = requests.post(
-                    url=f"{self.url_base}:{self.port}/{api}",
-                    headers=headers,
-                    data=json.dumps(data)
+                    url=f"{self.url_base}:{self.port}/{api}", headers=headers, data=json.dumps(data)
                 )
             # GET
             else:
-                response = requests.get(
-                    url=f"{self.url_base}:{self.port}/{api}",
-                    headers=headers,
-                    params=data
-                )
+                response = requests.get(url=f"{self.url_base}:{self.port}/{api}", headers=headers, params=data)
 
             status_code = str(response.status_code)
             response_json = response.json()
@@ -228,11 +210,7 @@ class Trader:
             status_code = "5xx"
             error = str(e)
         finally:
-            return {
-                "status_code": status_code,
-                "output": output,
-                "error": error,
-            }
+            return {"status_code": status_code, "output": output, "error": error}
 
     def cancel_request(self, ord_orgno: str, orgn_odno: str):
         """
@@ -279,7 +257,7 @@ class Trader:
             "tr_id": tr_id,
             # 개인
             "custtype": "P",
-            "hashkey": self.hashkey(data)
+            "hashkey": self.hashkey(data),
         }
 
         return self._request(api, data, headers)
@@ -311,7 +289,7 @@ class Trader:
             # 단가 구분
             "UNPR_DVSN": "01",
             "FUND_STTL_ICLD_YN": "N",
-            "FNCG_AMT_AUTO_RDPT_YN": 'N',
+            "FNCG_AMT_AUTO_RDPT_YN": "N",
             # 전일 매매 포함 여부
             "PRCS_DVSN": "00",
             "CTX_AREA_FK100": "",
@@ -326,7 +304,7 @@ class Trader:
             "tr_id": tr_id,
             # 개인
             "custtype": "P",
-            "hashkey": self.hashkey(data)
+            "hashkey": self.hashkey(data),
         }
 
         return self._request(api, data, headers, method="GET")
@@ -351,18 +329,17 @@ class Trader:
             "RSVN_ORD_END_DT": rsvn_ord_end_dt,
             "RSVN_ORD_SEQ": "",
             # 단말매체종류카드
-            "TMNL_MDIA_KIND_CD":"00",
+            "TMNL_MDIA_KIND_CD": "00",
             # 계좌번호
             "CANO": os.getenv("ACCOUNT_FRONT"),
             "ACNT_PRDT_CD": os.getenv("ACCOUNT_REAR"),
-
             "PRCS_DVSN_CD": "0",
             "CNCL_YN": "Y",
             # 종목코드 (공백 시 전체)
             "PDNO": "",
             "SLL_BUY_DVSN_CD": "",
             "CTX_AREA_FK200": "",
-            "CTX_AREA_NK200": ""
+            "CTX_AREA_NK200": "",
         }
 
         headers = {
@@ -373,7 +350,7 @@ class Trader:
             "tr_id": tr_id,
             # 개인
             "custtype": "P",
-            "hashkey": self.hashkey(data)
+            "hashkey": self.hashkey(data),
         }
 
         return self._request(api, data, headers, method="GET")
@@ -384,7 +361,7 @@ class Trader:
         # 참조: https://apiportal.koreainvestment.com/apiservice/apiservice-domestic-stock-order#L_66c61080-674f-4c91-a0cc-db5e64e9a5e6
         response_json["output"] = {
             "dnca_tot_amt": response_json["output"]["output2"][0]["dnca_tot_amt"],
-            "prvs_rcdl_excc_amt": response_json["output"]["output2"][0]["prvs_rcdl_excc_amt"]
+            "prvs_rcdl_excc_amt": response_json["output"]["output2"][0]["prvs_rcdl_excc_amt"],
         }
 
         return response_json
@@ -407,10 +384,7 @@ if __name__ == "__main__":
     dotenv.load_dotenv(f"./config/{file_name}")
 
     trader = Trader(
-        app_key=os.getenv("APP_KEY"),
-        app_secret=os.getenv("APP_SECRET"),
-        url_base=os.getenv("BASE_URL"),
-        mode=mode,
+        app_key=os.getenv("APP_KEY"), app_secret=os.getenv("APP_SECRET"), url_base=os.getenv("BASE_URL"), mode=mode
     )
     #
     # res = trader.get_credential_access_token()

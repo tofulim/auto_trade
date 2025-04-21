@@ -1,11 +1,10 @@
 import datetime
+
 import pendulum
+from common.trader_key_update import update_trader_key
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-
-from common.trader_key_update import update_trader_key
-
 
 # KST 시간
 kst = pendulum.timezone("Asia/Seoul")
@@ -19,10 +18,6 @@ key_update_dag = DAG(
     schedule_interval="30 8 * * *",
 )
 
-update_key = PythonOperator(
-    task_id="update_trader_key",
-    python_callable=update_trader_key,
-    dag=key_update_dag,
-)
+update_key = PythonOperator(task_id="update_trader_key", python_callable=update_trader_key, dag=key_update_dag)
 
 update_key

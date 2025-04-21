@@ -1,12 +1,11 @@
 import datetime
+
 import pendulum
+from report import check_portfolio, report_monthly
 
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
-from airflow.operators.python import PythonOperator, BranchPythonOperator
-
-from report import check_portfolio, report_monthly
-
+from airflow.operators.python import BranchPythonOperator, PythonOperator
 
 # KST 시간
 kst = pendulum.timezone("Asia/Seoul")
@@ -27,15 +26,8 @@ check_portfolio = BranchPythonOperator(
     dag=monthly_report_dag,
 )
 
-report_monthly = PythonOperator(
-    task_id="report_monthly",
-    python_callable=report_monthly,
-    dag=monthly_report_dag,
-)
+report_monthly = PythonOperator(task_id="report_monthly", python_callable=report_monthly, dag=monthly_report_dag)
 
-task_empty = EmptyOperator(
-    task_id='task_empty',
-    dag=monthly_report_dag
-)
+task_empty = EmptyOperator(task_id="task_empty", dag=monthly_report_dag)
 
 check_portfolio >> [report_monthly, task_empty]

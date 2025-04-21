@@ -1,12 +1,13 @@
 import datetime
 import logging
+
 import pendulum
+from asset_update import check_balance, check_portfolio, distribute_asset
+from common.calc_business_day import check_auto_payment_date
 
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
-from airflow.operators.python import PythonOperator, BranchPythonOperator
-from asset_update import check_balance, check_portfolio, distribute_asset
-from common.calc_business_day import check_auto_payment_date
+from airflow.operators.python import BranchPythonOperator, PythonOperator
 
 # Configure logger.py correctly
 # Logger
@@ -26,7 +27,7 @@ asset_check_n_distribution_dag = DAG(
 )
 
 check_date = BranchPythonOperator(
-    task_id='check_date',
+    task_id="check_date",
     python_callable=check_auto_payment_date,
     op_kwargs={"next_task_name": "check_balance", "use_next_ds": True},
     dag=asset_check_n_distribution_dag,
@@ -34,17 +35,11 @@ check_date = BranchPythonOperator(
 )
 
 check_balance = BranchPythonOperator(
-    task_id='check_balance',
-    python_callable=check_balance,
-    provide_context=True,
-    dag=asset_check_n_distribution_dag,
+    task_id="check_balance", python_callable=check_balance, provide_context=True, dag=asset_check_n_distribution_dag
 )
 
 check_portfolio = BranchPythonOperator(
-    task_id="check_portfolio",
-    python_callable=check_portfolio,
-    provide_context=True,
-    dag=asset_check_n_distribution_dag,
+    task_id="check_portfolio", python_callable=check_portfolio, provide_context=True, dag=asset_check_n_distribution_dag
 )
 
 distribute_asset = PythonOperator(
@@ -54,10 +49,7 @@ distribute_asset = PythonOperator(
     dag=asset_check_n_distribution_dag,
 )
 
-task_empty = EmptyOperator(
-    task_id='task_empty',
-    dag=asset_check_n_distribution_dag
-)
+task_empty = EmptyOperator(task_id="task_empty", dag=asset_check_n_distribution_dag)
 
 # 영업일인지 확인하고 주말 및 공휴일이면 DAG 종료
 check_date >> [check_balance, task_empty]

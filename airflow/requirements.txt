@@ -2,15 +2,11 @@
 finance-datareader==0.9.90
 # Install Meta's Prophet. if os is linux install fbprophet else prophet
 # fbprophet==1.1.5
-prophet==1.1.5
-yfinance==0.2.37
-statsmodels==0.14.1
-fastapi==0.100
-uvicorn==0.29.0
-inject==4.3.1
-sqlmodel==0.0.9
-sqlalchemy==1.4.49
 python-dotenv==1.0.1
-slack_sdk==3.31.0
 pendulum==2.1.2
 holidays==0.54
+matplotlib==3.9.4
+# 이 두개 고정이 필요함
+numpy==1.24.4
+pydantic==1.10.0
+yfinance==0.2.55

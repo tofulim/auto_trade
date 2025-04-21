@@ -1,14 +1,15 @@
 import datetime
 import json
-import os
 import logging
-import dotenv
-import requests
-import pandas as pd
-import yfinance as yf
-import matplotlib.pyplot as plt
+import os
 
-dotenv.load_dotenv(f"/home/ubuntu/zed/auto_trade/config/prod.env")
+import dotenv
+import matplotlib.pyplot as plt
+import pandas as pd
+import requests
+import yfinance as yf
+
+dotenv.load_dotenv("/opt/airflow/config/prod.env")
 logger = logging.getLogger("api_logger")
 
 
@@ -20,17 +21,17 @@ def ensure_directory_exists(save_path: str):
     if not os.path.exists(parent_directory):
         os.makedirs(parent_directory)
 
+
 def get_portfolio_rows():
     # 1. db에서 Portfolio table을 가져온다.
     response = requests.post(
         url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/get',
-        data=json.dumps({
-            "get_all": True,
-        })
+        data=json.dumps({"get_all": True}),
     )
     portfolio_rows = response.json()
 
     return portfolio_rows
+
 
 def check_portfolio(next_task_name: str, **kwargs):
     """포트폴리오 투자
@@ -49,55 +50,49 @@ def check_portfolio(next_task_name: str, **kwargs):
     portfolio_rows = get_portfolio_rows()
 
     # 2. 이번달 구매를 진행한 종목 리스트를 가져온다.
-    purchased_portfolio_rows = list(filter(
-        lambda row: row["month_purchase_flag"] == True, portfolio_rows
-    ))
+    purchased_portfolio_rows = list(filter(lambda row: row["month_purchase_flag"] is True, portfolio_rows))
 
     if len(purchased_portfolio_rows) > 0:
         # xcom에 저장하고 다음 task_name 반환
-        kwargs['task_instance'].xcom_push(key='purchased_portfolio_rows', value=purchased_portfolio_rows)
-        logger.info(
-            f"run {next_task_name}",
-        )
+        kwargs["task_instance"].xcom_push(key="purchased_portfolio_rows", value=purchased_portfolio_rows)
+        logger.info(f"run {next_task_name}")
         return next_task_name
     else:
-        logger.info(
-            f"run task_empty",
-        )
+        logger.info("run task_empty")
         return "task_empty"
 
 
 def report_monthly(**kwargs):
     # 1. 앞서 구한 구매한 포트폴리오 rows 가져오기
-    purchased_portfolio_rows = kwargs['task_instance'].xcom_pull(key='purchased_portfolio_rows')
+    purchased_portfolio_rows = kwargs["task_instance"].xcom_pull(key="purchased_portfolio_rows")
 
     end = datetime.datetime.now() + datetime.timedelta(days=1)
     start = end.replace(day=1)
     for purchased_portfolio_row in purchased_portfolio_rows:
         ticker = f"{purchased_portfolio_row['stock_symbol']}.{purchased_portfolio_row['country']}"
 
-        df = yf.download(ticker, start=start.strftime('%Y-%m-%d'), end=end.strftime('%Y-%m-%d'))
+        df = yf.download(ticker, start=start.strftime("%Y-%m-%d"), end=end.strftime("%Y-%m-%d"))
         min_close_row = df.loc[df["Close"].idxmin()]
         # "2024-12-20T00:00:00.000000000"
         # min_close_date = str(min_close_row.index.values[0])
         min_close = min_close_row["Close"].values[0][0]
 
         # "2024-12-12T18:00:13.824977"
-        updated_date = purchased_portfolio_row['updated_at']
+        updated_date = purchased_portfolio_row["updated_at"]
         purchased_date = pd.Timestamp(updated_date.split("T")[0])
         purchased_row = df.loc[purchased_date]
         purchased_close = purchased_row["Close"][0]
 
         # 플롯 생성
         plt.figure(figsize=(12, 6))
-        plt.plot(df.index, df["Close"], label="Close Price", marker='o', linestyle='-')
-        plt.hlines(min_close, df.index[0], df.index[-1], color='red', linestyle='solid', linewidth=3)
-        plt.text(df.index[-1], min_close, 'lowest', ha='left', va='center')
-        plt.hlines(purchased_close, df.index[0], df.index[-1], color='orange', linestyle='solid', linewidth=3)
-        plt.text(df.index[-1], purchased_close, 'purchased', ha='left', va='center')
+        plt.plot(df.index, df["Close"], label="Close Price", marker="o", linestyle="-")
+        plt.hlines(min_close, df.index[0], df.index[-1], color="red", linestyle="solid", linewidth=3)
+        plt.text(df.index[-1], min_close, "lowest", ha="left", va="center")
+        plt.hlines(purchased_close, df.index[0], df.index[-1], color="orange", linestyle="solid", linewidth=3)
+        plt.text(df.index[-1], purchased_close, "purchased", ha="left", va="center")
         plt.title(f"{ticker} Close Price Report")
 
-        save_path = f"/home/ubuntu/zed/auto_trade/airflow/reports/{datetime.datetime.now().year}_{datetime.datetime.now().month}_{ticker}.png"
+        save_path = f"/shared/reports/{datetime.datetime.now().year}_{datetime.datetime.now().month}_{ticker}.png"
         ensure_directory_exists(save_path)
         plt.savefig(save_path)
 
@@ -105,8 +100,5 @@ def report_monthly(**kwargs):
 
         requests.post(
             url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/trader/monthly_report',
-            data=json.dumps({
-                "save_path": save_path,
-                "summary": report_summary,
-            })
+            data=json.dumps({"save_path": save_path, "summary": report_summary}),
         )

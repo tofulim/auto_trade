@@ -5,15 +5,14 @@
 사용 전략의 예시는 다음과 같다.
 - 증감이 0.5% 이상이면 매수, 0.5% 이하이면 매도를 진행한다.
 """
+
 import os
+from datetime import datetime, timedelta, timezone
 from typing import List
 
 import yfinance as yf
-import pandas as pd
 from prophet import Prophet
-from datetime import datetime, timedelta, timezone
-
-from fastapi_server.utils import ensure_directory_exists
+from utils import ensure_directory_exists
 
 
 class ProphetModel:
@@ -21,6 +20,7 @@ class ProphetModel:
     Prophet 모델을 사용하여 주식 종가 예측을 진행한다.
     여러개의 주식에 대해 경향성을 예측하고 변화율을 반환한다.
     """
+
     def __init__(self):
         self.periods = int(os.getenv("PERIOD_DAYS"))
 
@@ -42,23 +42,20 @@ class ProphetModel:
                 # 한국 주식의 경우 종목코드 뒤에 .KS를 붙여준다.
                 stock_symbol = f"{stock_row['stock_symbol']}.{stock_row['country'].upper()}"
             else:
-                stock_symbol = stock_row['stock_symbol']
+                stock_symbol = stock_row["stock_symbol"]
 
             self.model = Prophet()
             self.fit(stock_symbol, start_date, end_date)
             forecast = self.predict(periods=self.periods)
 
             diff_rate = self.get_diff_rate(forecast, periods=self.periods)
-            last_price = self.stock_data['y'][-1]
-            prophecies[stock_symbol] = {
-                "diff_rate": diff_rate,
-                "last_price": last_price,
-            }
+            last_price = self.stock_data["y"][-1]
+            prophecies[stock_symbol] = {"diff_rate": diff_rate, "last_price": last_price}
             # 경향 예측 그래프를 저장한다.
             if save_plot:
                 fig = self.plot(forecast)
                 # TODO: 추후 경로 지정
-                save_path = f"./prophet_result/{datetime.now().strftime('%Y-%m-%d')}_{stock_symbol}.png"
+                save_path = f"/shared/reports/{datetime.now().strftime('%Y-%m-%d')}_{stock_symbol}.png"
                 ensure_directory_exists(save_path)
                 fig.savefig(save_path)
                 prophecies[stock_symbol]["fig_save_path"] = save_path
@@ -96,10 +93,10 @@ class ProphetModel:
         self.start_date = start_date
         KST = timezone(timedelta(hours=9))
         end_datetime = datetime.now(KST) + timedelta(days=1)
-        self.end_date = end_datetime.strftime('%Y-%m-%d')
+        self.end_date = end_datetime.strftime("%Y-%m-%d")
 
         self.stock_data = yf.download(stock_symbol, start=start_date, end=self.end_date)
-        self.stock_data = self.stock_data.asfreq('B')
+        self.stock_data = self.stock_data.asfreq("B")
 
         # 종가 기준
         self.stock_data["y"] = self.stock_data["Close"]
@@ -107,7 +104,7 @@ class ProphetModel:
         self.model.fit(self.stock_data)
 
     def predict(self, periods: int = 30):
-        future = self.model.make_future_dataframe(periods=periods, freq='B')
+        future = self.model.make_future_dataframe(periods=periods, freq="B")
         forecast = self.model.predict(future)
 
         return forecast
@@ -119,10 +116,11 @@ class ProphetModel:
 
 if __name__ == "__main__":
     import dotenv
-    dotenv.load_dotenv(f"/home/ubuntu/zed/auto_trade/config/prod.env")
+
+    dotenv.load_dotenv("/home/ubuntu/zed/auto_trade/config/prod.env")
     pf = ProphetModel()
 
-    stock_rows = [{'country': 'ks', 'accum_asset': 5000.0, 'stock_symbol': '453810', 'id': 1, 'ratio': 0.3}]
+    stock_rows = [{"country": "ks", "accum_asset": 5000.0, "stock_symbol": "453810", "id": 1, "ratio": 0.3}]
 
-    cr = pf(stock_rows, '2021-01-01', datetime.today().strftime('%Y-%m-%d'))
+    cr = pf(stock_rows, "2021-01-01", datetime.today().strftime("%Y-%m-%d"))
     print(f"종가 변화율 예측 결과: {cr}")

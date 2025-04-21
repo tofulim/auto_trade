@@ -1,17 +1,15 @@
 import importlib
-import os
 import logging
-import uvicorn
+import os
 
+import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 
 class FastAPIServer:
     def __init__(self):
-        self.app = FastAPI(
-            title="Auto Trade",
-        )
+        self.app = FastAPI(title="Auto Trade")
         self.app.add_middleware(
             CORSMiddleware,
             allow_origins=[org.strip() for org in os.getenv("CORS_ORIGINS", "").split(",")],
@@ -49,10 +47,7 @@ def initialize_api_logger():
     api_logger.setLevel("INFORM")
     handler = logging.StreamHandler()  # 예제로 콘솔 핸들러 사용
     handler.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(
-        "[%(endpoint_name)s]: "
-        "%(asctime)s | %(levelname)s | %(message)s"
-    )
+    formatter = logging.Formatter("[%(endpoint_name)s]: " "%(asctime)s | %(levelname)s | %(message)s")
     handler.setFormatter(formatter)
     api_logger.addHandler(handler)
 
