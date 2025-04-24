@@ -1,7 +1,6 @@
 import json
 import os
 
-import dotenv
 import requests
 
 
@@ -380,8 +379,6 @@ if __name__ == "__main__":
         file_name = "prod.env"
     else:
         file_name = "dev.env"
-
-    dotenv.load_dotenv(f"./config/{file_name}")
 
     trader = Trader(
         app_key=os.getenv("APP_KEY"), app_secret=os.getenv("APP_SECRET"), url_base=os.getenv("BASE_URL"), mode=mode

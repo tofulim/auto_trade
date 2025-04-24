@@ -1,10 +1,8 @@
 import os
 
-import dotenv
 from initializer import Initializer
 from utils import FastAPIServer, get_controllers, initialize_api_logger
 
-dotenv.load_dotenv("./config/prod.env")
 initialize_api_logger()
 Initializer()
 
