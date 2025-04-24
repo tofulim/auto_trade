@@ -3,14 +3,12 @@ import logging
 import os
 from datetime import datetime, timedelta
 
-import dotenv
 import requests
 import yfinance as yf
 from common.calc_business_day import is_ktc_business_day
 from common.statistics import get_moving_averages, get_rsi, get_zscore
 from const import PURCHASE, SELL, STAY
 
-dotenv.load_dotenv("/opt/airflow/config/prod.env")
 logger = logging.getLogger("api_logger")
 
 

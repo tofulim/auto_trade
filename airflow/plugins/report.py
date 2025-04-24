@@ -3,13 +3,11 @@ import json
 import logging
 import os
 
-import dotenv
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 import yfinance as yf
 
-dotenv.load_dotenv("/opt/airflow/config/prod.env")
 logger = logging.getLogger("api_logger")
 
 

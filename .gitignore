@@ -12,6 +12,9 @@ airflow/*.pid
 # C extensions
 *.so
 
+#env
+.fastapi.env
+
 # Distribution / packaging
 .Python
 build/
@@ -135,7 +138,6 @@ celerybeat.pid
 # Environments
 .config
 .config/
-.env
 .venv
 env/
 venv/

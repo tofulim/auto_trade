@@ -115,9 +115,6 @@ class ProphetModel:
 
 
 if __name__ == "__main__":
-    import dotenv
-
-    dotenv.load_dotenv("/home/ubuntu/zed/auto_trade/config/prod.env")
     pf = ProphetModel()
 
     stock_rows = [{"country": "ks", "accum_asset": 5000.0, "stock_symbol": "453810", "id": 1, "ratio": 0.3}]

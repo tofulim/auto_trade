@@ -2,10 +2,8 @@ import json
 import logging
 import os
 
-import dotenv
 import requests
 
-dotenv.load_dotenv("/opt/airflow/config/prod.env")
 logger = logging.getLogger("api_logger")
 
 
