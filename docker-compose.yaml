@@ -53,8 +53,11 @@ x-airflow-common:
   build: ./airflow
   extra_hosts:
       - host.docker.internal:host-gateway
+  env_file:
+    - .airflow.env
   environment:
     &airflow-common-env
+
     AIRFLOW__CORE__EXECUTOR: SequentialExecutor
     AIRFLOW__CORE__PARALLELISM: 1
     AIRFLOW__SCHEDULER__MAX_TIS_PER_QUERY: 1
@@ -118,6 +121,8 @@ services:
 
   fastapi-server:
     build: ./fastapi_server
+    env_file:
+    - .fastapi.env
     extra_hosts:
       - host.docker.internal:host-gateway
     volumes:
