@@ -44,6 +44,30 @@ $ pip3 install -r requirements.txt
 $ source download_airflow.sh
 $ pip3 install -e .
 ```
+
+## Insert your private keys & tokens
+fix `.fastapi.env.example`  !
+```
+# 한투 실전투자계좌 정보(PROD)
+APP_KEY={ENTER_YOUR_PRIVATE_INFO}
+APP_SECRET={ENTER_YOUR_PRIVATE_INFO}
+
+# 한투 계좌번호(계좌번호 앞자리)
+ACCOUNT_FRONT={ENTER_YOUR_PRIVATE_INFO}
+ACCOUNT_REAR={ENTER_YOUR_PRIVATE_INFO}
+
+# 한투 API 접근 토큰(초기 NULL이고 갱신하여 사용)
+KIS_ACCESS_TOKEN={ENTER_YOUR_PRIVATE_INFO}
+
+# Slack 토큰
+SLACK_BOT_TOKEN={ENTER_YOUR_PRIVATE_INFO}
+```
+
+then rename it!
+```
+$ mv .fastapi.env.example .fastapi.env
+```
+
 ## Run
 Open a terminal and run:
 
