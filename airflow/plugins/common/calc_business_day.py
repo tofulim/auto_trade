@@ -2,10 +2,8 @@ import logging
 import os
 from datetime import date, datetime
 
-import dotenv
 import holidays
 
-dotenv.load_dotenv("/opt/airflow/config/prod.env")
 logger = logging.getLogger("api_logger")
 
 

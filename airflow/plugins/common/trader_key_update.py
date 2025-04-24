@@ -1,9 +1,6 @@
 import os
 
-import dotenv
 import requests
-
-dotenv.load_dotenv("/opt/airflow/config/prod.env")
 
 
 def update_trader_key():
