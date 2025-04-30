@@ -15,6 +15,9 @@ airflow/*.pid
 #env
 .fastapi.env
 
+# report results
+shared/*
+
 # Distribution / packaging
 .Python
 build/
