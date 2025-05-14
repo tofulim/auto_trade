@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from typing import List
 
 import yfinance as yf
+from curl_cffi import requests
 from prophet import Prophet
 from utils import ensure_directory_exists
 
@@ -23,6 +24,7 @@ class ProphetModel:
 
     def __init__(self):
         self.periods = int(os.getenv("PERIOD_DAYS"))
+        self.session = requests.Session(impersonate="chrome")
 
     def __call__(self, stock_rows: List[dict], start_date: str, end_date: str, save_plot: bool = True):
         """
@@ -95,7 +97,7 @@ class ProphetModel:
         end_datetime = datetime.now(KST) + timedelta(days=1)
         self.end_date = end_datetime.strftime("%Y-%m-%d")
 
-        self.stock_data = yf.download(stock_symbol, start=start_date, end=self.end_date)
+        self.stock_data = yf.download(stock_symbol, start=start_date, end=self.end_date, session=self.session)
         self.stock_data = self.stock_data.asfreq("B")
 
         # 종가 기준

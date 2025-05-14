@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 import yfinance as yf
+from curl_cffi import requests as curl_requests
 
 logger = logging.getLogger("api_logger")
 
@@ -61,6 +62,7 @@ def check_portfolio(next_task_name: str, **kwargs):
 
 
 def report_monthly(**kwargs):
+    session = curl_requests.Session(impersonate="chrome")
     # 1. 앞서 구한 구매한 포트폴리오 rows 가져오기
     purchased_portfolio_rows = kwargs["task_instance"].xcom_pull(key="purchased_portfolio_rows")
 
@@ -69,7 +71,7 @@ def report_monthly(**kwargs):
     for purchased_portfolio_row in purchased_portfolio_rows:
         ticker = f"{purchased_portfolio_row['stock_symbol']}.{purchased_portfolio_row['country']}"
 
-        df = yf.download(ticker, start=start.strftime("%Y-%m-%d"), end=end.strftime("%Y-%m-%d"))
+        df = yf.download(ticker, start=start.strftime("%Y-%m-%d"), end=end.strftime("%Y-%m-%d"), session=session)
         min_close_row = df.loc[df["Close"].idxmin()]
         # "2024-12-20T00:00:00.000000000"
         # min_close_date = str(min_close_row.index.values[0])
