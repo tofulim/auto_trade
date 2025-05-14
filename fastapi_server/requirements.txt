@@ -15,3 +15,4 @@ holidays==0.54
 numpy==1.24.4
 pydantic==1.10.0
 yfinance==0.2.55
+curl_cffi==0.10.0
