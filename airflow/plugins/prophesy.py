@@ -8,6 +8,7 @@ import yfinance as yf
 from common.calc_business_day import is_ktc_business_day
 from common.statistics import get_moving_averages, get_rsi, get_zscore
 from const import PURCHASE, SELL, STAY
+from curl_cffi import requests as curl_requests
 
 logger = logging.getLogger("api_logger")
 
@@ -86,7 +87,8 @@ def _get_statistics(stock_symbol: str, n_days: int = 20):
 
     """
     # end = datetime.now() + timedelta(days=1)
-    price_df = yf.download(stock_symbol)
+    session = curl_requests.Session(impersonate="chrome")
+    price_df = yf.download(stock_symbol, session=session)
 
     day5_close_avg, day10_close_avg, day20_close_avg, day60_close_avg = get_moving_averages(price_df)
     statistics = {
