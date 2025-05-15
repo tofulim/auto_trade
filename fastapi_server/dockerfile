@@ -2,10 +2,10 @@
 # docker run -it -p 8000:8000 -v ./shared:/shared -v ./fastapi_server/database:/database fastapi-server
 FROM python:3.9
 
-COPY ./fastapi_server/requirements.txt ./requirements.txt
+COPY ./requirements.txt ./requirements.txt
 
 RUN pip3 install -r requirements.txt
 
-COPY ./fastapi_server ./
+COPY ./ ./
 
 CMD ["python3", "main.py"]

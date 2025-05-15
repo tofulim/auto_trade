@@ -2,10 +2,10 @@
 
 FROM apache/airflow:2.7.1-python3.9
 
-COPY ./airflow/requirements.txt ./requirements.txt
+COPY ./requirements.txt ./requirements.txt
 
 RUN pip3 install apache-airflow==${AIRFLOW_VERSION} -r requirements.txt
 
-COPY ./airflow/dags /opt/airflow/dags
-COPY ./airflow/plugins /opt/airflow/plugins
-COPY ./airflow/airflow.cfg /opt/airflow/airflow.cfg
+COPY ./dags /opt/airflow/dags
+COPY ./plugins /opt/airflow/plugins
+COPY ./airflow.cfg /opt/airflow/airflow.cfg
