@@ -6,6 +6,7 @@ __pycache__/
 test.py
 # prophet_result
 prophet_result/
+shared/reports/*
 
 .airflow
 airflow/*.pid
@@ -14,6 +15,8 @@ airflow/*.pid
 
 #env
 .fastapi.env
+.secret
+.vars
 
 # Distribution / packaging
 .Python
