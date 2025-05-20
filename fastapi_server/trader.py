@@ -261,6 +261,43 @@ class Trader:
 
         return self._request(api, data, headers)
 
+    def cancel_rsvn_request(self, rsvn_ord_seq: str):
+        """
+        주문당시의 영업점코드와 주문번호를 활용해 요청한 매입/매도 예약 주문을 취소한다.
+        status_code와 에러를 반환한다.
+
+        Args:
+            rsvn_ord_seq (str): 예약주문순번
+
+        Returns:
+            status_code (str): 상태 코드, (200 | 4xx | 5xx)
+            error (str): 에러
+
+        """
+        tr_id = os.getenv("RSVN_CANCEL_TR_ID")
+        api = "uapi/domestic-stock/v1/trading/order-resv-rvsecncl"
+
+        data = {
+            # 계좌번호
+            "CANO": os.getenv("ACCOUNT_FRONT"),
+            "ACNT_PRDT_CD": os.getenv("ACCOUNT_REAR"),
+            # 예약주문순번
+            "RSVN_ORD_SEQ": rsvn_ord_seq,
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "authorization": f"Bearer {self.access_token}",
+            "appKey": self.app_key,
+            "appSecret": self.app_secret,
+            "tr_id": tr_id,
+            # 개인
+            "custtype": "P",
+            "hashkey": self.hashkey(data),
+        }
+
+        return self._request(api, data, headers)
+
     def inquire_balance(self):
         """
         주식 잔고조회

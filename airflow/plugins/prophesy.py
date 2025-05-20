@@ -104,6 +104,8 @@ def execute_decisions(**kwargs):
     """결정 수행
     portfolio 종목들에 대한 prophecies를 받아 매매를 수행한다.
     """
+    # 0. 예약 주문 목록을 준비해놓는다. (예약 주문이 존재하는지 확인하고 존재한다면 취소하기 위함)
+    rsvn_orders = _get_rsvn_orders()
 
     # 1. 앞서 구한 할당/구매 안한 포트폴리오 의사결정 가져오기
     portfolio_behavior_decisions = kwargs["task_instance"].xcom_pull(key="portfolio_behavior_decisions")
@@ -118,6 +120,9 @@ def execute_decisions(**kwargs):
             continue
         elif behavior == PURCHASE:
             if ord_qty > 0:
+                # 이미 예약 주문을 넣어 놓은 상태라면 기존 예약 주문을 취소한다. (새로 예약 주문을 넣기 위해)
+                check_rsvn_order_n_cancel(rsvn_orders=rsvn_orders, stock_symbol=stock_symbol)
+
                 result = requests.post(
                     url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/trader/buy',
                     data=json.dumps(
@@ -152,6 +157,89 @@ def execute_decisions(**kwargs):
             raise ValueError("behavior must one of (STAY | PURCHASE | SELL)")
 
         logger.info(f"stock_symbol: {stock_symbol} - behavior {behavior}'s result is {result.json()}")
+
+
+def _get_rsvn_orders():
+    """예약 주문 목록을 가져온다.
+    1. db에서 Portfolio table을 가져온다.
+    2. 예약 주문이 존재하는지 확인한다.
+    3. 존재한다면 취소한다.
+    4. 존재하지 않는다면 pass한다.
+
+    Args:
+        stock_symbol (str): 주식 종목 심볼 (ex. 005930)
+
+    Returns:
+        rsvn_orders (list): 예약 주문 목록
+
+        ex. [{
+            "rsvn_ord_seq": "4657",
+            "rsvn_ord_ord_dt": "20250509",
+            "rsvn_ord_rcit_dt": "20250422",
+            "pdno": "368590",
+            "ord_dvsn_cd": "01",
+            "ord_rsvn_qty": "24",
+            "tot_ccld_qty": "0",
+            "cncl_ord_dt": "",
+            "ord_tmd": "082113",
+            "ctac_tlno": "",
+            "rjct_rson2": "정상 처리 완료되었습니다.",
+            "odno": "0000429300",
+            "rsvn_ord_rcit_tmd": "200038",
+            "kor_item_shtn_name": "RISE 미국나스닥100",
+            "sll_buy_dvsn_cd": "02",
+            "ord_rsvn_unpr": "18805",
+            "tot_ccld_amt": "0",
+            "loan_dt": "",
+            "cncl_rcit_tmd": "",
+            "prcs_rslt": "처리",
+            "ord_dvsn_name": "현금매수",
+            "tmnl_mdia_kind_cd": "31",
+            "rsvn_end_dt": "20250522"
+            }]
+    """
+    end = datetime.datetime.now() + datetime.timedelta(days=1)
+    start = end.replace(day=1)
+
+    # 이번달 전체 orders를 받아온다.
+    response = requests.post(
+        url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/trader/get_orders',
+        data=json.dumps({"rsvn_ord_start_dt": start.strftime("%Y%m%d"), "rsvn_ord_end_dt": end.strftime("%Y%m%d")}),
+    )
+    rsvn_orders = response.json()["output"]
+
+    return rsvn_orders
+
+
+def check_rsvn_order_n_cancel(rsvn_orders: list, stock_symbol: str):
+    """예약 주문 확인 및 취소
+    1. 예약 주문이 존재하는지 확인한다.
+    2. 존재한다면 취소한다.
+    3. 존재하지 않는다면 pass한다.
+
+    신규 예약 주문이 기존 예약 주문 위에 쌓이는 현상을 방지한다.
+    하나의 종목에 대해 여러 예약 주문이 쌓이는 현상은 발생하지 않도록 한다.
+
+    Args:
+        rsvn_orders (list): 예약 주문 목록
+        stock_symbol (str): 주식 종목 심볼 (ex. 005930)
+    """
+    # 1. 예약 주문 내 해당 종목 확인
+    rsvn_orders = list(filter(lambda rsvn_order: rsvn_order["pdno"] == stock_symbol, rsvn_orders))
+
+    if len(rsvn_orders) > 0:
+        # 2. 존재한다면 취소한다.
+        for rsvn_order in rsvn_orders:
+            result = requests.post(
+                url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/trader/rsvn_cancel',
+                data=json.dumps({"rsvn_ord_seq": rsvn_order["rsvn_ord_seq"]}),
+            )
+            logger.info(f"cancel rsvn order {rsvn_order['rsvn_ord_seq']} - result {result.json()}")
+
+    # 3. 존재하지 않는다면 pass한다.
+    else:
+        logger.info(f"no rsvn order exist for {stock_symbol}. pass cancel rsvn order")
+        return None
 
 
 def _get_end_dt():

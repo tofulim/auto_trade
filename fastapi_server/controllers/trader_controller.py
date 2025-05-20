@@ -134,6 +134,18 @@ async def cancel(request: Request, ord_orgno: int, orgn_odno: int):
     return res
 
 
+@router.post("/rsvn_cancel")
+async def rsvn_cancel(request: Request, rsvn_ord_seq: str):
+    res = trader.cancel_rsvn_request(rsvn_ord_seq=rsvn_ord_seq)
+
+    logger.inform(
+        f"Cancel Reservation order of sequence {rsvn_ord_seq} | Status {res['status_code']} | Error {res['error']}",
+        extra={"endpoint_name": request.url.path},
+    )
+
+    return res
+
+
 @router.post("/sell")
 async def sell(request: Request, stock_symbol: str, ord_qty: int, ord_price: int):
     res = trader.sell_stock(stock_code=stock_symbol, ord_qty=ord_qty, ord_price=ord_price)
