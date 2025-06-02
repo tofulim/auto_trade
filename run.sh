@@ -1,8 +1,8 @@
 echo "AIRFLOW_UID=$(id -u)" > .env
 echo "AIRFLOW_GID=$(id -g)" >> .env
 
-mkdir airflow
-mkdir shared
+mkdir airflow || true
+mkdir shared || true
 
 
 tmux kill-session -t "auto-trade" || true

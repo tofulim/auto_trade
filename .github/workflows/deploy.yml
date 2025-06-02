@@ -30,35 +30,35 @@ jobs:
         echo "Version from env: $VERSION"
         echo "uname is ${{ vars.DOCKERHUB_USERNAME }}"
 
-    # - name: Login to Docker Hub
-    #   uses: docker/login-action@v3
-    #   with:
-    #     username: ${{ vars.DOCKERHUB_USERNAME }}
-    #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ vars.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # - name: Set up QEMU
-    #   uses: docker/setup-qemu-action@v3
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
 
-    # - name: Set up Docker Buildx
-    #   uses: docker/setup-buildx-action@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
 
-    # - name: Build and push - Airflow image
-    #   uses: docker/build-push-action@v6
-    #   with:
-    #     context: airflow
-    #     push: true
-    #     tags: ${{ vars.DOCKERHUB_USERNAME }}/at-airflow:${{ env.VERSION }}
-    #     cache-from: type=gha # Guthub Actions 캐시
-    #     cache-to: type=gha,mode=max
+    - name: Build and push - Airflow image
+      uses: docker/build-push-action@v6
+      with:
+        context: airflow
+        push: true
+        tags: ${{ vars.DOCKERHUB_USERNAME }}/at-airflow:${{ env.VERSION }}
+        cache-from: type=gha # Guthub Actions 캐시
+        cache-to: type=gha,mode=max
 
-    # - name: Build and push - FastAPI image
-    #   uses: docker/build-push-action@v6
-    #   with:
-    #     context: fastapi_server
-    #     push: true
-    #     tags: ${{ vars.DOCKERHUB_USERNAME }}/at-fastapi:${{ env.VERSION }}
-    #     cache-from: type=gha # Guthub Actions 캐시
-    #     cache-to: type=gha,mode=max
+    - name: Build and push - FastAPI image
+      uses: docker/build-push-action@v6
+      with:
+        context: fastapi_server
+        push: true
+        tags: ${{ vars.DOCKERHUB_USERNAME }}/at-fastapi:${{ env.VERSION }}
+        cache-from: type=gha # Guthub Actions 캐시
+        cache-to: type=gha,mode=max
 
     - name: Get Github action IP
       id: ip
@@ -76,9 +76,17 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ap-northeast-2
 
+    - name: Install AWS CLI
+      run: |
+        sudo apt-get update && sudo apt-get install -yy less
+
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip awscliv2.zip
+        sudo ./aws/install
+
     - name: Add Github Actions IP to Security group
       run: |
-        aws ec2 authorize-security-group-ingress --group-name ${{ env.AWS_SG_NAME }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
+        aws ec2 authorize-security-group-ingress --group-name ${{ env.AWS_SG_NAME }} --protocol tcp --port 24 --cidr ${{ steps.ip.outputs.ipv4 }}/32
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -87,21 +95,51 @@ jobs:
       run: |
         echo "${{ secrets.HOST }}"
 
-    # - name: executing remote ssh commands using key
-    #   uses: appleboy/ssh-action@master
-    #   with:
-    #     host: ${{ secrets.HOST }}
-    #     username: ${{ secrets.USERNAME }}
-    #     key: ${{ secrets.KEY }}
-    #     port: ${{ secrets.PORT }}
-    #     script: |
-    #       cd /home/ubuntu/zed/auto_trade
+    - name: Send docker-compose file to remote with SCP
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        source: docker-compose.yaml
+        target: ${{ vars.BASE_PATH }}
+
+    - name: Send .env vars to remote with SCP
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        source: "*.env"
+        target: ${{ vars.BASE_PATH }}
+
+    - name: Send run script to remote with SCP
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        source: run.sh
+        target: ${{ vars.BASE_PATH }}
+
+    - name: executing remote ssh commands using key
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          docker login -u ${{ vars.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
+
+          cd ${{ vars.BASE_PATH }}
+          sh run.sh
 
 
-    #  - name: Remove Github Actions IP from security group
-    #    run: |
-    #      aws ec2 revoke-security-group-ingress --group-name ${{ env.AWS_SG_NAME }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
-    #    env:
-    #      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-    #      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-    #      AWS_DEFAULT_REGION: ap-northeast-2
+    - name: Remove Github Actions IP from security group
+      run: |
+        aws ec2 revoke-security-group-ingress --group-name ${{ env.AWS_SG_NAME }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ap-northeast-2
