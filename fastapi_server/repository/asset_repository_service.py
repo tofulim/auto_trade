@@ -1,7 +1,6 @@
+from database.database import Database
+from entity.asset import Asset
 from sqlmodel import Session, select
-
-from fastapi_server.database.database import Database
-from fastapi_server.entity.asset import Asset
 
 
 class AssetRepositoryService:
@@ -58,7 +57,7 @@ if __name__ == "__main__":
     prs = AssetRepositoryService(db)
     # res = prs.add(Asset(budget=1000))
     # res = prs.update(update_number=3000)
-    res = prs.delete()
+    # res = prs.delete()
     res = prs.get()
     print(res)
     # print(res[0].model_dump())

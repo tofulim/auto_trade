@@ -1,9 +1,11 @@
 import os
+
 import inject
-from fastapi_server.database.database import Database
-from fastapi_server.repository.asset_repository_service import AssetRepositoryService
-from fastapi_server.repository.portfolio_repository_service import PortfolioRepositoryService
+from database.database import Database
 from prophecy import ProphetModel
+from repository.asset_repository_service import AssetRepositoryService
+from repository.portfolio_repository_service import PortfolioRepositoryService
+from slack import KISSlackBot
 from trader import Trader
 
 
@@ -25,9 +27,11 @@ class Initializer:
             url_base=os.getenv("BASE_URL"),
             mode="PROD",
         )
+        kis_slackbot = KISSlackBot(slack_bot_token=os.getenv("SLACK_BOT_TOKEN"))
 
         binder.bind(Database, db)
         binder.bind(PortfolioRepositoryService, portfolio_repository_service)
         binder.bind(AssetRepositoryService, asset_repository_service)
         binder.bind(ProphetModel, prophet_model)
         binder.bind(Trader, trader)
+        binder.bind(KISSlackBot, kis_slackbot)

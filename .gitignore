@@ -6,9 +6,17 @@ __pycache__/
 test.py
 # prophet_result
 prophet_result/
+shared/reports/*
 
+.airflow
+airflow/*.pid
 # C extensions
 *.so
+
+#env
+.fastapi.env
+.secret
+.vars
 
 # Distribution / packaging
 .Python
@@ -133,7 +141,6 @@ celerybeat.pid
 # Environments
 .config
 .config/
-.env
 .venv
 env/
 venv/

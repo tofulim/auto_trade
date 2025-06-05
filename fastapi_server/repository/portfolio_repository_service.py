@@ -3,11 +3,12 @@ Author: zed.ai
 Reviewer:
 2024.05.22
 """
-from datetime import datetime, timedelta
-from sqlmodel import Session, select
 
-from fastapi_server.database.database import Database
-from fastapi_server.entity.portfolio import Portfolio
+from datetime import datetime, timedelta
+
+from database.database import Database
+from entity.portfolio import Portfolio
+from sqlmodel import Session, select
 
 
 class PortfolioRepositoryService:
@@ -19,9 +20,9 @@ class PortfolioRepositoryService:
             session.add(portfolio)
             session.commit()
 
-    def get(self, stock_symbol: str, stay_entity=False):
+    def get(self, stock_symbols: list, stay_entity=False):
         with Session(self.db.engine) as session:
-            statement = select(Portfolio).where(Portfolio.stock_symbol == stock_symbol)
+            statement = select(Portfolio).where(Portfolio.stock_symbol.in_(stock_symbols))
             result = session.exec(statement).all()
 
         if stay_entity:
@@ -55,6 +56,7 @@ class PortfolioRepositoryService:
             result.ratio = portfolio.ratio
             result.month_purchase_flag = portfolio.month_purchase_flag
             result.updated_at = portfolio.updated_at
+            result.order_status = portfolio.order_status
             # session.add(result)
             session.commit()
 
@@ -91,14 +93,17 @@ if __name__ == "__main__":
     # print(res)
 
     prs = PortfolioRepositoryService(db)
+    # res = prs.get(
+    #     stock_symbols=[453810, 368590],
+    # )
     # res = prs.add(Portfolio(stock_symbol="123121", country="US", ratio=0.5))
     # res = prs.update("123121", Portfolio(stock_symbol="123126", country="ks", ratio=0.3))
-    res = prs.update_fields(
-        stock_symbol="453810",
-        update_data={
-            "stock_symbol": "453888",
-        },
-    )
+    # res = prs.update_fields(
+    #     stock_symbol="453810",
+    #     update_data={
+    #         "stock_symbol": "453888",
+    #     },
+    # )
     # res = prs.delete("123124")
     res = prs.get_all()
     print(res)
