@@ -1,0 +1,21 @@
+# .github/workflows/drafter.yaml
+
+name: Draft new release
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+    - name: Release
+      # reference : https://github.com/release-drafter/release-drafter
+      uses: release-drafter/release-drafter@v6
+      with:
+        config-name: drafter-config.yaml
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

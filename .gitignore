@@ -16,7 +16,11 @@ airflow/*.pid
 #env
 .fastapi.env
 .secret
+.env_vars
 .vars
+
+# report results
+shared/*
 
 # Distribution / packaging
 .Python
