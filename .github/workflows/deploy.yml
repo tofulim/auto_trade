@@ -1,8 +1,8 @@
 name: remote ssh command for deploy
 on:
  push:
-  #  branches: [release/*]
-   branches: [test]
+   branches: [release/*]
+
 jobs:
  deploy:
    name: Deploy
@@ -43,23 +43,23 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    # - name: Build and push - Airflow image
-    #   uses: docker/build-push-action@v6
-    #   with:
-    #     context: airflow
-    #     push: true
-    #     tags: ${{ vars.DOCKERHUB_USERNAME }}/at-airflow:${{ env.VERSION }}
-    #     cache-from: type=gha # Guthub Actions 캐시
-    #     cache-to: type=gha,mode=max
+    - name: Build and push - Airflow image
+      uses: docker/build-push-action@v6
+      with:
+        context: airflow
+        push: true
+        tags: ${{ vars.DOCKERHUB_USERNAME }}/at-airflow:${{ env.VERSION }}
+        cache-from: type=gha # Guthub Actions 캐시
+        cache-to: type=gha,mode=max
 
-    # - name: Build and push - FastAPI image
-    #   uses: docker/build-push-action@v6
-    #   with:
-    #     context: fastapi_server
-    #     push: true
-    #     tags: ${{ vars.DOCKERHUB_USERNAME }}/at-fastapi:${{ env.VERSION }}
-    #     cache-from: type=gha # Guthub Actions 캐시
-    #     cache-to: type=gha,mode=max
+    - name: Build and push - FastAPI image
+      uses: docker/build-push-action@v6
+      with:
+        context: fastapi_server
+        push: true
+        tags: ${{ vars.DOCKERHUB_USERNAME }}/at-fastapi:${{ env.VERSION }}
+        cache-from: type=gha # Guthub Actions 캐시
+        cache-to: type=gha,mode=max
 
     - name: Get Github action IP
       id: ip
@@ -87,7 +87,7 @@ jobs:
 
     - name: Add Github Actions IP to Security group
       run: |
-        aws ec2 authorize-security-group-ingress --group-name ${{ env.AWS_SG_NAME }} --protocol tcp --port 24 --cidr ${{ steps.ip.outputs.ipv4 }}/32
+        aws ec2 authorize-security-group-ingress --group-name ${{ env.AWS_SG_NAME }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -135,7 +135,6 @@ jobs:
 
           cd ${{ vars.BASE_PATH }}
           sh run.sh ${{ env.VERSION }}
-
 
     - name: Remove Github Actions IP from security group
       run: |
