@@ -1,7 +1,8 @@
 name: remote ssh command for deploy
 on:
  push:
-   branches: [release/*]
+  #  branches: [release/*]
+   branches: [test]
 jobs:
  deploy:
    name: Deploy
