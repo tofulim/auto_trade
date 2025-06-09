@@ -43,23 +43,23 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build and push - Airflow image
-      uses: docker/build-push-action@v6
-      with:
-        context: airflow
-        push: true
-        tags: ${{ vars.DOCKERHUB_USERNAME }}/at-airflow:${{ env.VERSION }}
-        cache-from: type=gha # Guthub Actions 캐시
-        cache-to: type=gha,mode=max
+    # - name: Build and push - Airflow image
+    #   uses: docker/build-push-action@v6
+    #   with:
+    #     context: airflow
+    #     push: true
+    #     tags: ${{ vars.DOCKERHUB_USERNAME }}/at-airflow:${{ env.VERSION }}
+    #     cache-from: type=gha # Guthub Actions 캐시
+    #     cache-to: type=gha, mode=max
 
-    - name: Build and push - FastAPI image
-      uses: docker/build-push-action@v6
-      with:
-        context: fastapi_server
-        push: true
-        tags: ${{ vars.DOCKERHUB_USERNAME }}/at-fastapi:${{ env.VERSION }}
-        cache-from: type=gha # Guthub Actions 캐시
-        cache-to: type=gha,mode=max
+    # - name: Build and push - FastAPI image
+    #   uses: docker/build-push-action@v6
+    #   with:
+    #     context: fastapi_server
+    #     push: true
+    #     tags: ${{ vars.DOCKERHUB_USERNAME }}/at-fastapi:${{ env.VERSION }}
+    #     cache-from: type=gha # Guthub Actions 캐시
+    #     cache-to: type=gha, mode=max
 
     - name: Get Github action IP
       id: ip
