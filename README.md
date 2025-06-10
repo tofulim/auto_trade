@@ -37,12 +37,8 @@ Auto Trade는 포트폴리오를 구성한 뒤, 이들 종목에 대해 매월 �
 ## Installation
 Open a terminal and run:
 ```
-$ conda create -n auto-trade python=3.9
-$ conda activate auto-trade
-
-$ pip3 install -r requirements.txt
-$ source download_airflow.sh
-$ pip3 install -e .
+# 'docker compose up --build' will run
+$ run.sh
 ```
 
 ## Insert your private keys & tokens
