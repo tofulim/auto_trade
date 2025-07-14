@@ -76,13 +76,13 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ap-northeast-2
 
-    - name: Install AWS CLI
-      run: |
-        sudo apt-get update && sudo apt-get install -yy less
+    # - name: Install AWS CLI
+    #   run: |
+    #     sudo apt-get update && sudo apt-get install -yy less
 
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-        unzip awscliv2.zip
-        sudo ./aws/install
+    #     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    #     unzip awscliv2.zip
+    #     sudo ./aws/install
 
     - name: Add Github Actions IP to Security group
       run: |
