@@ -12,6 +12,15 @@ from curl_cffi import requests as curl_requests
 
 logger = logging.getLogger("api_logger")
 
+# Import LLM strategy - handle import error gracefully
+try:
+    from llm_strategy import get_llm_decision
+    LLM_AVAILABLE = True
+    logger.info("LLM strategy module loaded successfully")
+except ImportError as e:
+    logger.warning(f"LLM strategy not available: {e}")
+    LLM_AVAILABLE = False
+
 
 def prophesy_portfolio(**kwargs):
     """
@@ -48,12 +57,15 @@ def prophesy_portfolio(**kwargs):
         stock_symbol_tz = stock_symbol
         stock_symbol = stock_symbol.split(".")[0]
         last_price, diff_rate = prophecy["last_price"], prophecy["diff_rate"]
+        statistics = _get_statistics(stock_symbol=stock_symbol_tz)
         behavior, behavior_reason = _get_behavior(
             diff_rate=diff_rate,
-            statistics=_get_statistics(stock_symbol=stock_symbol_tz),
+            statistics=statistics,
             order_status=stock_symbol2order_status[stock_symbol],
             purchase_threshold=float(os.getenv("PURCHASE_THRESHOLD")),
             sell_threshold=float(os.getenv("SELL_THRESHOLD")),
+            stock_symbol=stock_symbol_tz,
+            current_price=last_price,
         )
         portfolio_behavior_decisions.append(
             # (stock_symbol, behavior, diff_rate, month_budget, last_price)
@@ -253,7 +265,13 @@ def _get_end_dt():
 
 
 def _get_behavior(
-    diff_rate: float, statistics: dict, order_status: str, purchase_threshold: float, sell_threshold: float
+    diff_rate: float, 
+    statistics: dict, 
+    order_status: str, 
+    purchase_threshold: float, 
+    sell_threshold: float,
+    stock_symbol: str = None,
+    current_price: float = None
 ):
     """행동 결정
 
@@ -263,6 +281,8 @@ def _get_behavior(
         order_status (str): 매매 주문 상태
         purchase_threshold (float): 매수 기준점
         sell_threshold (float): 매도 기준점
+        stock_symbol (str): 주식 종목 심볼 (LLM 분석용)
+        current_price (float): 현재 주가 (LLM 분석용)
 
     Returns:
         behavior (str): const에 정의된 행동 (PURCHASE | SELL | STAY) 중 하나이다.
@@ -271,7 +291,9 @@ def _get_behavior(
     """
     behavior, behavior_reason = STAY, ""
     # 종목 상태가 예약 매수가 진행된 적이 없거나 실패한 상태일 때 수행한다.
-    statisstics_behavior, model_behavior = STAY, STAY
+    statisstics_behavior, model_behavior, llm_behavior = STAY, STAY, STAY
+    llm_reasoning = ""
+    
     # 1. rsi, ma, zscore로 행동을 결정한다.
     if statistics["rsi"] >= 70 and statistics["ma"]["day5"] > statistics["ma"]["day20"] and statistics["zscore"] >= 1:
         statisstics_behavior = SELL
@@ -297,14 +319,80 @@ def _get_behavior(
     else:
         model_behavior = STAY
 
-    # 3. 최종 행동을 결정한다
+    # 3. LLM 분석을 통해 행동을 결정한다 (새로운 기능)
+    if LLM_AVAILABLE and stock_symbol and current_price:
+        try:
+            llm_result = get_llm_decision(
+                stock_symbol=stock_symbol,
+                prophet_diff_rate=diff_rate,
+                statistics=statistics,
+                current_price=current_price
+            )
+            
+            if llm_result.get('enabled', False):
+                llm_decision = llm_result.get('decision', 'HOLD')
+                llm_reasoning = llm_result.get('reasoning', '')
+                llm_confidence = llm_result.get('confidence', 0.0)
+                
+                # Map LLM decision to our constants
+                if llm_decision == 'BUY':
+                    llm_behavior = PURCHASE
+                elif llm_decision == 'SELL':
+                    llm_behavior = SELL
+                else:
+                    llm_behavior = STAY
+                
+                behavior_reason += f" | LLM: {llm_decision} (confidence: {llm_confidence:.2f}) - {llm_reasoning}"
+        except Exception as e:
+            logger.error(f"Error in LLM analysis: {e}")
+            behavior_reason += f" | LLM analysis failed"
+
+    # 4. 최종 행동을 결정한다
     if order_status not in ["N", "F"]:
         behavior = STAY
-    elif statisstics_behavior == PURCHASE or model_behavior == PURCHASE:
-        behavior = PURCHASE
-    elif statisstics_behavior == SELL and model_behavior == SELL:
-        behavior = SELL
     else:
-        behavior = STAY
+        # LLM이 강한 신호를 주고 confidence가 높으면 우선 고려
+        if LLM_AVAILABLE and llm_behavior != STAY and 'confidence:' in behavior_reason:
+            try:
+                # Extract confidence from reasoning string
+                confidence_str = behavior_reason.split('confidence: ')[1].split(')')[0]
+                confidence = float(confidence_str)
+                
+                # High confidence LLM decision (>0.7) gets priority
+                if confidence > 0.7:
+                    if llm_behavior == PURCHASE and (statisstics_behavior == PURCHASE or model_behavior == PURCHASE):
+                        behavior = PURCHASE
+                    elif llm_behavior == SELL and (statisstics_behavior == SELL or model_behavior == SELL):
+                        behavior = SELL
+                    # If LLM disagrees with other indicators, be conservative
+                    elif llm_behavior != statisstics_behavior and llm_behavior != model_behavior:
+                        behavior = STAY
+                        behavior_reason += " | Conservative approach due to mixed signals"
+                    else:
+                        behavior = llm_behavior
+                else:
+                    # Lower confidence, use traditional logic
+                    if statisstics_behavior == PURCHASE or model_behavior == PURCHASE:
+                        behavior = PURCHASE
+                    elif statisstics_behavior == SELL and model_behavior == SELL:
+                        behavior = SELL
+                    else:
+                        behavior = STAY
+            except (ValueError, IndexError):
+                # Fallback to traditional logic if confidence parsing fails
+                if statisstics_behavior == PURCHASE or model_behavior == PURCHASE:
+                    behavior = PURCHASE
+                elif statisstics_behavior == SELL and model_behavior == SELL:
+                    behavior = SELL
+                else:
+                    behavior = STAY
+        else:
+            # Traditional logic when LLM is not available or gives no signal
+            if statisstics_behavior == PURCHASE or model_behavior == PURCHASE:
+                behavior = PURCHASE
+            elif statisstics_behavior == SELL and model_behavior == SELL:
+                behavior = SELL
+            else:
+                behavior = STAY
 
     return behavior, behavior_reason
