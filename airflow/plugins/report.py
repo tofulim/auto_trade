@@ -1,15 +1,15 @@
 import datetime
 import json
-import logging
 import os
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 import yfinance as yf
+from common.logger_config import setup_logger
 from curl_cffi import requests as curl_requests
 
-logger = logging.getLogger("api_logger")
+logger = setup_logger(__name__)
 
 
 def ensure_directory_exists(save_path: str):

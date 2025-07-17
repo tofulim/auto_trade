@@ -1,20 +1,21 @@
 import json
-import logging
 import os
 from datetime import datetime, timedelta
 
 import requests
 import yfinance as yf
 from common.calc_business_day import is_ktc_business_day
+from common.logger_config import setup_logger
 from common.statistics import get_moving_averages, get_rsi, get_zscore
 from const import PURCHASE, SELL, STAY
 from curl_cffi import requests as curl_requests
 
-logger = logging.getLogger("api_logger")
+logger = setup_logger(__name__)
 
 # Import LLM strategy - handle import error gracefully
 try:
     from llm_strategy import get_llm_decision
+
     LLM_AVAILABLE = True
     logger.info("LLM strategy module loaded successfully")
 except ImportError as e:
@@ -265,13 +266,13 @@ def _get_end_dt():
 
 
 def _get_behavior(
-    diff_rate: float, 
-    statistics: dict, 
-    order_status: str, 
-    purchase_threshold: float, 
+    diff_rate: float,
+    statistics: dict,
+    order_status: str,
+    purchase_threshold: float,
     sell_threshold: float,
     stock_symbol: str = None,
-    current_price: float = None
+    current_price: float = None,
 ):
     """행동 결정
 
@@ -293,7 +294,7 @@ def _get_behavior(
     # 종목 상태가 예약 매수가 진행된 적이 없거나 실패한 상태일 때 수행한다.
     statisstics_behavior, model_behavior, llm_behavior = STAY, STAY, STAY
     llm_reasoning = ""
-    
+
     # 1. rsi, ma, zscore로 행동을 결정한다.
     if statistics["rsi"] >= 70 and statistics["ma"]["day5"] > statistics["ma"]["day20"] and statistics["zscore"] >= 1:
         statisstics_behavior = SELL
@@ -326,38 +327,38 @@ def _get_behavior(
                 stock_symbol=stock_symbol,
                 prophet_diff_rate=diff_rate,
                 statistics=statistics,
-                current_price=current_price
+                current_price=current_price,
             )
-            
-            if llm_result.get('enabled', False):
-                llm_decision = llm_result.get('decision', 'HOLD')
-                llm_reasoning = llm_result.get('reasoning', '')
-                llm_confidence = llm_result.get('confidence', 0.0)
-                
+
+            if llm_result.get("enabled", False):
+                llm_decision = llm_result.get("decision", "HOLD")
+                llm_reasoning = llm_result.get("reasoning", "")
+                llm_confidence = llm_result.get("confidence", 0.0)
+
                 # Map LLM decision to our constants
-                if llm_decision == 'BUY':
+                if llm_decision == "BUY":
                     llm_behavior = PURCHASE
-                elif llm_decision == 'SELL':
+                elif llm_decision == "SELL":
                     llm_behavior = SELL
                 else:
                     llm_behavior = STAY
-                
+
                 behavior_reason += f" | LLM: {llm_decision} (confidence: {llm_confidence:.2f}) - {llm_reasoning}"
         except Exception as e:
             logger.error(f"Error in LLM analysis: {e}")
-            behavior_reason += f" | LLM analysis failed"
+            behavior_reason += " | LLM analysis failed"
 
     # 4. 최종 행동을 결정한다
     if order_status not in ["N", "F"]:
         behavior = STAY
     else:
         # LLM이 강한 신호를 주고 confidence가 높으면 우선 고려
-        if LLM_AVAILABLE and llm_behavior != STAY and 'confidence:' in behavior_reason:
+        if LLM_AVAILABLE and llm_behavior != STAY and "confidence:" in behavior_reason:
             try:
                 # Extract confidence from reasoning string
-                confidence_str = behavior_reason.split('confidence: ')[1].split(')')[0]
+                confidence_str = behavior_reason.split("confidence: ")[1].split(")")[0]
                 confidence = float(confidence_str)
-                
+
                 # High confidence LLM decision (>0.7) gets priority
                 if confidence > 0.7:
                     if llm_behavior == PURCHASE and (statisstics_behavior == PURCHASE or model_behavior == PURCHASE):

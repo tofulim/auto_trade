@@ -19,7 +19,7 @@ To enable the LLM trading strategy, you need to obtain a free Google Gemini API 
 3. **Free Tier Limits**:
    - Gemini 1.5 Flash: 15 requests per minute, 1 million tokens per day
    - Gemini 1.5 Pro: 2 requests per minute, 50 requests per day
-   
+
    The system is designed to work within these limits for daily trading decisions.
 
 ## How It Works
@@ -54,9 +54,9 @@ This allows users to:
 ## Example Output
 
 ```
-005930: PURCHASE - statistics {'rsi': 30.0, 'ma': {'day5': 70000}} is oversold. 
-it's time to buy | diff_rate 4.0 is over purchase_threshold 3.0 | 
-LLM: BUY (confidence: 0.85) - Current oversold conditions combined with 
-positive earnings outlook and sector rotation into tech stocks suggest 
+005930: PURCHASE - statistics {'rsi': 30.0, 'ma': {'day5': 70000}} is oversold.
+it's time to buy | diff_rate 4.0 is over purchase_threshold 3.0 |
+LLM: BUY (confidence: 0.85) - Current oversold conditions combined with
+positive earnings outlook and sector rotation into tech stocks suggest
 strong buying opportunity. Technical indicators align with macroeconomic trends.
 ```
