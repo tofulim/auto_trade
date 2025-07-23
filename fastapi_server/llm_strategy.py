@@ -103,29 +103,28 @@ class LLMTradingStrategy:
                 return {"error": "No market data available"}
 
             # Calculate basic metrics
-            latest_close = stock_data["Close"].iloc[-1]
-            period_start_close = stock_data["Close"].iloc[0]
+            latest_close = stock_data["Close"].iloc[-1].values[0]
+            period_start_close = stock_data["Close"].iloc[0].values[0]
             price_change = ((latest_close - period_start_close) / period_start_close) * 100
-
             # Volume analysis
-            avg_volume = stock_data["Volume"].mean()
-            recent_volume = stock_data["Volume"].iloc[-5:].mean()  # Last 5 days
+            avg_volume = stock_data["Volume"].mean().values[0]
+            recent_volume = stock_data["Volume"].iloc[-5:].mean().values[0]  # Last 5 days
             volume_trend = "increasing" if recent_volume > avg_volume else "decreasing"
-
             # Volatility
-            volatility = stock_data["Close"].pct_change().std() * 100
+            volatility = stock_data["Close"].pct_change().std().values[0] * 100
+
+            hight_52w = stock_data["High"].max().values[0]
+            low_52w = stock_data["Low"].min().values[0]
 
             return {
                 "price_change_period": round(price_change, 2),
                 "volume_trend": volume_trend,
                 "volatility": round(volatility, 2),
                 "trading_days": len(stock_data),
-                "high_52w": stock_data["High"].max(),
-                "low_52w": stock_data["Low"].min(),
-                "current_vs_high": round(
-                    ((latest_close - stock_data["High"].max()) / stock_data["High"].max()) * 100, 2
-                ),
-                "current_vs_low": round(((latest_close - stock_data["Low"].min()) / stock_data["Low"].min()) * 100, 2),
+                "high_52w": hight_52w,
+                "low_52w": low_52w,
+                "current_vs_high": round(((latest_close - hight_52w) / hight_52w) * 100, 2),
+                "current_vs_low": round(((latest_close - low_52w) / low_52w) * 100, 2),
             }
 
         except Exception as e:
@@ -151,7 +150,7 @@ class LLMTradingStrategy:
         TECHNICAL ANALYSIS DATA:
         - Prophet Model Prediction: {prophet_diff_rate:.2f}% change expected over next 30 days
         - RSI: {statistics.get('rsi', 'N/A')}
-        - Moving Averages: 5-day: {statistics.get('ma', {}).get('day5', 'N/A')}, 20-day: {statistics.get('ma', {}).get('day20', 'N/A')}
+        - Moving Averages: 5-day: {statistics.get('ma', {}).get('day5', 'N/A')}, 10-day: {statistics.get('ma', {}).get('day10', 'N/A')}, 20-day: {statistics.get('ma', {}).get('day20', 'N/A')}, 60-day: {statistics.get('ma', {}).get('day60', 'N/A')}
         - Z-Score: {statistics.get('zscore', 'N/A')}
 
         MARKET CONTEXT:
@@ -175,12 +174,12 @@ class LLMTradingStrategy:
         5. Assign confidence score (0.0 to 1.0)
 
         RESPONSE FORMAT (JSON):
-        {
+        {{
             "decision": "BUY|SELL|HOLD",
-            "reasoning": "Detailed economic reasoning explaining the decision based on technical analysis, market conditions, and economic factors",
+            "reasoning": "기술적 분석, 시장 상황 및 경제적 요인을 기반으로 결정을 설명하는 자세한 경제적 추론",
             "confidence": 0.85,
             "key_factors": ["factor1", "factor2", "factor3"]
-        }
+        }}
 
         Please provide your analysis:
         """
@@ -270,5 +269,17 @@ if __name__ == "__main__":
     strategy = LLMTradingStrategy()
     if strategy.is_enabled():
         print("LLM Strategy is ready!")
+        res = get_llm_decision(
+            stock_symbol="453810.KS",
+            prophet_diff_rate=-0.03,
+            statistics={
+                "rsi": 47.05,
+                "ma": {"day5": 13841.0, "day10": 13854.0, "day20": 13801.0, "day60": 13734.0},
+                "zscore": 0.0,
+            },
+            current_price=13815,
+        )
+
+        print(res)
     else:
         print("LLM Strategy is not available")
