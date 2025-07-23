@@ -198,7 +198,7 @@ def _get_rsvn_orders():
             "rsvn_end_dt": "20250522"
             }]
     """
-    end = datetime.datetime.now() + datetime.timedelta(days=1)
+    end = datetime.now() + datetime.timedelta(days=1)
     start = end.replace(day=1)
 
     # 이번달 전체 orders를 받아온다.
