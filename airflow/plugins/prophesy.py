@@ -12,15 +12,8 @@ from curl_cffi import requests as curl_requests
 
 logger = setup_logger(__name__)
 
-# Import LLM strategy - handle import error gracefully
-try:
-    from llm_strategy import get_llm_decision
-
-    LLM_AVAILABLE = True
-    logger.info("LLM strategy module loaded successfully")
-except ImportError as e:
-    logger.warning(f"LLM strategy not available: {e}")
-    LLM_AVAILABLE = False
+# LLM analysis will be handled via FastAPI endpoint
+LLM_AVAILABLE = True  # Always assume available since we'll check via API
 
 
 def prophesy_portfolio(**kwargs):
@@ -320,30 +313,50 @@ def _get_behavior(
     else:
         model_behavior = STAY
 
-    # 3. LLM 분석을 통해 행동을 결정한다 (새로운 기능)
+    # 3. LLM 분석을 통해 행동을 결정한다 (FastAPI 엔드포인트 사용)
     if LLM_AVAILABLE and stock_symbol and current_price:
         try:
-            llm_result = get_llm_decision(
-                stock_symbol=stock_symbol,
-                prophet_diff_rate=diff_rate,
-                statistics=statistics,
-                current_price=current_price,
+            # Call FastAPI LLM endpoint
+            llm_request_data = {
+                "stock_symbol": stock_symbol,
+                "prophet_diff_rate": diff_rate,
+                "statistics": statistics,
+                "current_price": current_price,
+                "period_days": 30
+            }
+            
+            llm_response = requests.post(
+                url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/llm/analyze',
+                json=llm_request_data,
+                timeout=30  # 30 second timeout for LLM analysis
             )
+            
+            if llm_response.status_code == 200:
+                llm_result = llm_response.json()
+                
+                if llm_result.get("enabled", False):
+                    llm_decision = llm_result.get("decision", "HOLD")
+                    llm_reasoning = llm_result.get("reasoning", "")
+                    llm_confidence = llm_result.get("confidence", 0.0)
 
-            if llm_result.get("enabled", False):
-                llm_decision = llm_result.get("decision", "HOLD")
-                llm_reasoning = llm_result.get("reasoning", "")
-                llm_confidence = llm_result.get("confidence", 0.0)
+                    # Map LLM decision to our constants
+                    if llm_decision == "BUY":
+                        llm_behavior = PURCHASE
+                    elif llm_decision == "SELL":
+                        llm_behavior = SELL
+                    else:
+                        llm_behavior = STAY
 
-                # Map LLM decision to our constants
-                if llm_decision == "BUY":
-                    llm_behavior = PURCHASE
-                elif llm_decision == "SELL":
-                    llm_behavior = SELL
+                    behavior_reason += f" | LLM: {llm_decision} (confidence: {llm_confidence:.2f}) - {llm_reasoning}"
                 else:
-                    llm_behavior = STAY
-
-                behavior_reason += f" | LLM: {llm_decision} (confidence: {llm_confidence:.2f}) - {llm_reasoning}"
+                    behavior_reason += " | LLM service not available"
+            else:
+                logger.warning(f"LLM API call failed with status {llm_response.status_code}")
+                behavior_reason += " | LLM API call failed"
+                
+        except requests.exceptions.Timeout:
+            logger.error("LLM analysis timeout")
+            behavior_reason += " | LLM analysis timeout"
         except Exception as e:
             logger.error(f"Error in LLM analysis: {e}")
             behavior_reason += " | LLM analysis failed"
