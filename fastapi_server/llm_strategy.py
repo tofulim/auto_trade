@@ -121,9 +121,9 @@ class LLMTradingStrategy:
                 "volume_trend": volume_trend,
                 "volatility": round(volatility, 2),
                 "trading_days": len(stock_data),
-                "high_52w": hight_52w,
+                "high_52w": high_52w,
                 "low_52w": low_52w,
-                "current_vs_high": round(((latest_close - hight_52w) / hight_52w) * 100, 2),
+                "current_vs_high": round(((latest_close - high_52w) / high_52w) * 100, 2),
                 "current_vs_low": round(((latest_close - low_52w) / low_52w) * 100, 2),
             }
 
