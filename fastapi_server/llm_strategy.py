@@ -113,7 +113,7 @@ class LLMTradingStrategy:
             # Volatility
             volatility = stock_data["Close"].pct_change().std().values[0] * 100
 
-            hight_52w = stock_data["High"].max().values[0]
+            high_52w = stock_data["High"].max().values[0]
             low_52w = stock_data["Low"].min().values[0]
 
             return {
