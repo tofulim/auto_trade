@@ -25,10 +25,12 @@ Auto Trade는 포트폴리오를 구성한 뒤, 이들 종목에 대해 매월 �
 	    - 한국투자증권 API를 활용한 주식 매매, 주문 조회 등의 API
 	    - DB에 저장된 사용자의 자산 정보 API
 	    - slackbot API
+	    - LLM 전략 모듈 (Google Gemini 기반)
 - airflow 파트
     - 자동매매에 필요한 논리적 행동들을 스케쥴링합니다.
 	    - ex1) 매일 한투 API 토큰을 갱신한다.
 	    - ex2) 매일 내 포트폴리오 종목들의 한달 뒤 종가를 예측한다.
+	    - ex3) LLM을 활용해 경제적 근거와 함께 매매 의사결정을 한다.
 	- 되도록 모든 action은 API를 호출해 수행합니다.
 
 ## Architecturehttps://github.com/tofulim/auto_trade/issues
@@ -57,6 +59,9 @@ KIS_ACCESS_TOKEN={ENTER_YOUR_PRIVATE_INFO}
 
 # Slack 토큰
 SLACK_BOT_TOKEN={ENTER_YOUR_PRIVATE_INFO}
+
+# Google Gemini API 키 (LLM 전략용 - free tier 사용)
+GEMINI_API_KEY={ENTER_YOUR_PRIVATE_INFO}
 ```
 
 then rename it!
@@ -132,6 +137,17 @@ fastapi 서버와 각 airflow scheduler와 webserver는 각각의 tmux 세션에
 	- 매매 동작에 대한 알림은 slack을 통해 전해지고 메시지를 받은 후로부터 최소 12시간 뒤에 실제 매매가 이루어지므로 나도 모르게 매매가 이루어지는 것은 방지할 수 있습니다.
 
 ## Feature Examples
+### LLM 활용 매매 전략 (새로운 기능)
+#### AI 기반 의사결정
+- Google Gemini (free tier)를 활용해 경제적 근거와 함께 매매 결정을 제공한다.
+- 기존 Prophet 모델 및 통계 분석과 함께 종합적인 판단을 수행한다.
+- 높은 신뢰도(>0.7)의 AI 분석이 기존 지표와 일치할 때 우선적으로 반영된다.
+
+#### 경제적 근거 제공
+- 각 매매 결정에 대한 상세한 경제적 분석과 근거를 제공한다.
+- 사용자가 AI의 판단을 검토하고 학습할 수 있도록 돕는다.
+- 예약 매수 특성상 다음 날 오전 실행 전 취소 가능하다.
+
 ### daily_report
 #### 종가 예측
 - 한 달 뒤 종가를 예측하고 오늘 대비 몇 퍼센트 등락할 지 그래프와 함께 반환한다.

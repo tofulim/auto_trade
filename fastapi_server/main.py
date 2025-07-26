@@ -1,10 +1,11 @@
 import os
 
 from initializer import Initializer
-from utils import FastAPIServer, get_controllers, initialize_api_logger
+from utils import FastAPIServer, get_controllers, setup_logger
 
-initialize_api_logger()
 Initializer()
+
+api_logger = setup_logger(__name__)
 
 server = FastAPIServer()
 app = server.app

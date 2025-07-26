@@ -30,28 +30,6 @@ class FastAPIServer:
         uvicorn.run(self.app, host=os.getenv("FASTAPI_SERVER_HOST"), port=int(os.getenv("FASTAPI_SERVER_PORT")))
 
 
-class Inform(logging.Logger):
-    trace = 15
-
-    def inform(self, msg, *args, **kwargs):
-        self.log(self.trace, msg, *args, **kwargs)
-
-
-def initialize_api_logger():
-    logging.setLoggerClass(Inform)
-    logging.addLevelName(15, "INFORM")
-
-    api_logger_name = "api_logger"
-
-    api_logger = logging.getLogger(api_logger_name)
-    api_logger.setLevel("INFORM")
-    handler = logging.StreamHandler()  # 예제로 콘솔 핸들러 사용
-    handler.setLevel(logging.DEBUG)
-    formatter = logging.Formatter("[%(endpoint_name)s]: " "%(asctime)s | %(levelname)s | %(message)s")
-    handler.setFormatter(formatter)
-    api_logger.addHandler(handler)
-
-
 def get_controllers(modules):
     return [importlib.import_module(module_name) for module_name in modules]
 
@@ -63,3 +41,26 @@ def ensure_directory_exists(save_path: str):
     # 부모 디렉토리가 존재하는지 확인하고, 없으면 생성합니다.
     if not os.path.exists(parent_directory):
         os.makedirs(parent_directory)
+
+
+class Inform(logging.Logger):
+    trace = 15
+
+    def inform(self, msg, *args, **kwargs):
+        self.log(self.trace, msg, *args, **kwargs)
+
+
+def setup_logger(name: str = "api_logger") -> logging.Logger:
+    logging.setLoggerClass(Inform)
+    logging.addLevelName(15, "INFORM")
+
+    api_logger = logging.getLogger(name)
+    if not api_logger.hasHandlers():
+        api_logger.setLevel("INFORM")
+        handler = logging.StreamHandler()  # 예제로 콘솔 핸들러 사용
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter("[%(endpoint_name)s]: " "%(asctime)s | %(levelname)s | %(message)s")
+        handler.setFormatter(formatter)
+        api_logger.addHandler(handler)
+
+    return api_logger

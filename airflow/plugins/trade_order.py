@@ -1,11 +1,11 @@
 import datetime
 import json
-import logging
 import os
 
 import requests
+from common.logger_config import setup_logger
 
-logger = logging.getLogger("api_logger")
+logger = setup_logger(__name__)
 
 
 def get_portfolio_rows():
