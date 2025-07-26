@@ -322,18 +322,18 @@ def _get_behavior(
                 "prophet_diff_rate": diff_rate,
                 "statistics": statistics,
                 "current_price": current_price,
-                "period_days": 30
+                "period_days": 30,
             }
-            
+
             llm_response = requests.post(
                 url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/llm/analyze',
                 json=llm_request_data,
-                timeout=30  # 30 second timeout for LLM analysis
+                timeout=30,  # 30 second timeout for LLM analysis
             )
-            
+
             if llm_response.status_code == 200:
                 llm_result = llm_response.json()
-                
+
                 if llm_result.get("enabled", False):
                     llm_decision = llm_result.get("decision", "HOLD")
                     llm_reasoning = llm_result.get("reasoning", "")
@@ -347,13 +347,13 @@ def _get_behavior(
                     else:
                         llm_behavior = STAY
 
-                    behavior_reason += f" | LLM: {llm_decision} (confidence: {llm_confidence:.2f}) - {llm_reasoning}"
+                    behavior_reason = f"llm_request_data: {llm_request_data}\nLLM: {llm_decision} (confidence: {llm_confidence:.2f}) - {llm_reasoning}"
                 else:
                     behavior_reason += " | LLM service not available"
             else:
                 logger.warning(f"LLM API call failed with status {llm_response.status_code}")
                 behavior_reason += " | LLM API call failed"
-                
+
         except requests.exceptions.Timeout:
             logger.error("LLM analysis timeout")
             behavior_reason += " | LLM analysis timeout"
@@ -366,13 +366,10 @@ def _get_behavior(
         behavior = STAY
     else:
         # LLM이 강한 신호를 주고 confidence가 높으면 우선 고려
-        if LLM_AVAILABLE and llm_behavior != STAY and "confidence:" in behavior_reason:
+        if LLM_AVAILABLE and llm_behavior != STAY:
             try:
-                # Extract confidence from reasoning string
-                confidence_str = behavior_reason.split("confidence: ")[1].split(")")[0]
-                confidence = float(confidence_str)
-
                 # High confidence LLM decision (>0.7) gets priority
+                confidence = llm_confidence
                 if confidence > 0.7:
                     if llm_behavior == PURCHASE and (statisstics_behavior == PURCHASE or model_behavior == PURCHASE):
                         behavior = PURCHASE
