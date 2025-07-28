@@ -85,7 +85,7 @@ x-airflow-common:
     AIRFLOW_PROJ_DIR: ./airflow
 
   volumes:
-    - ${AIRFLOW_PROJ_DIR:-./airflow}/:/opt/airflow
+    - ${AIRFLOW_PROJ_DIR:-./airflow}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-./shared}/:/shared
   user: "0:0"
 
