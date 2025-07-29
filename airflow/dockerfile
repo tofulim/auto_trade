@@ -9,3 +9,4 @@ RUN pip3 install apache-airflow==${AIRFLOW_VERSION} -r requirements.txt
 COPY ./dags /opt/airflow/dags
 COPY ./plugins /opt/airflow/plugins
 COPY ./airflow.cfg /opt/airflow/airflow.cfg
+COPY ./airflow.db /opt/airflow/airflow.db
