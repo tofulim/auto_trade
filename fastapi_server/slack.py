@@ -12,11 +12,53 @@ class KISSlackBot:
     def __init__(self, slack_bot_token: str):
         self.client = WebClient(token=slack_bot_token)
 
-    def post_message(self, channel_id: str, text: str, thread_ts: str = None):
+    def post_message(self, channel_id: str, text: str, thread_ts: str = None, markdown: bool = True):
         # ID of the channel you want to send the message to
         try:
             # Call the chat.postMessage method using the WebClient
-            result = self.client.chat_postMessage(channel=channel_id, thread_ts=thread_ts, text=text)
+            if markdown:
+                result = self.client.chat_postMessage(channel=channel_id, thread_ts=thread_ts, markdown_text=text)
+            else:
+                result = self.client.chat_postMessage(channel=channel_id, thread_ts=thread_ts, text=text)
+            logger.info(result)
+            return result
+
+        except SlackApiError as e:
+            logger.error(f"Error posting message: {e}")
+
+    def post_attachment(
+        self,
+        channel_id: str,
+        color: str,
+        thread_ts: str = None,
+        pretext: str = None,
+        text: str = None,
+        title: str = None,
+        **kwargs,
+    ):
+        """Attachment 전송
+        일반 text보다 많은 것을 담을 수 있는 attachment를 전송한다.
+        색감과 함께 다양한 정보를 담을 수 있다.
+
+        Args:
+            color (str): 좌단 기둥 색상
+            pretext (str, optional) attachment block위에 나타날 text
+            title (str, optional): attachment title
+            text (str, optional): attachment text
+            **kwargs: 추가적인 정보들로 fields를 추가할 수 있다. (title, text로 구성된 dict 형태로 전달) 통계 정보를 하나씩 전달하기 용이하다.
+
+        Returns:
+            _type_: _description_
+        """
+        # ID of the channel you want to send the message to
+        fields = []
+        if kwargs:
+            for key, value in kwargs["statistics"].items():
+                fields.append({"title": key, "value": str(value), "short": False})
+
+        attachments = [{"color": color, "pretext": pretext, "title": title, "text": text, "fields": fields}]
+        try:
+            result = self.client.chat_postMessage(channel=channel_id, thread_ts=thread_ts, attachments=attachments)
             logger.info(result)
             return result
 
@@ -72,14 +114,27 @@ class KISSlackBot:
 if __name__ == "__main__":
     slackbot = KISSlackBot(slack_bot_token="xoxb-...")
     # slackbot.post_message(
-    #     channel_id="test",
+    #     channel_id="test_channel",
     #     # thread_ts="1722946045.578359",
-    #     text="on test",
-    # )
 
-    slackbot.post_file(
-        file_path="/Users/limdohoon/PycharmProjects/auto-trade/test.png",
-        filename="test_file",
+    #     text="#title\n\n#content **This is bold text**",
+    # )
+    statistics = {
+        "rsi": 49.84,
+        "ma": {"day5": 13695.0, "day10": 13768.0, "day20": 13808.0, "day60": 13726.0},
+        "zscore": -3.0,
+    }
+    slackbot.post_attachment(
         channel_id="C08FRRB60Q6",
-        # thread_ts=
+        color="#2eb886",
+        thread_ts="1722946045.578359",
+        title="453810 Statistics",
+        text="decision: HOLD",
+        statistics=statistics,
     )
+    # slackbot.post_file(
+    #     file_path="/Users/limdohoon/PycharmProjects/auto-trade/test.png",
+    #     filename="test_file",
+    #     channel_id="C08FRRB60Q6",
+    #     # thread_ts=
+    # )
