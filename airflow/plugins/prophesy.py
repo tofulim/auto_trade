@@ -66,12 +66,22 @@ def prophesy_portfolio(**kwargs):
             (stock_symbol, behavior, diff_rate, stock_symbol2month_budget[stock_symbol], last_price)
         )
 
-        input_text = f"{stock_symbol}: {behavior} - {behavior_reason}"
         channel_id = os.getenv("DAILY_REPORT_CHANNEL")
         print(f"channel_id: {channel_id}")
+
+        color = "#ea602e" if behavior == PURCHASE else "#0b36f3" if behavior == SELL else "#F69709"
+
         response = requests.post(
-            url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/slackbot/send_message',
-            data=json.dumps({"channel_id": channel_id, "input_text": input_text}),
+            url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/slackbot/send_attachment',
+            data=json.dumps(
+                {
+                    "channel_id": channel_id,
+                    "color": color,
+                    "title": f"{stock_symbol} Statistics",
+                    "text": f"decision: {behavior}",
+                    "field_dict": statistics,
+                }
+            ),
         )
 
     kwargs["task_instance"].xcom_push(key="portfolio_behavior_decisions", value=portfolio_behavior_decisions)

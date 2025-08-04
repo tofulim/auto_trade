@@ -124,6 +124,11 @@ if __name__ == "__main__":
         "ma": {"day5": 13695.0, "day10": 13768.0, "day20": 13808.0, "day60": 13726.0},
         "zscore": -3.0,
     }
+
+    # statistics = {
+    #     "변화율": -2.59,
+    #     "금일 종가":23695,
+    # }
     slackbot.post_attachment(
         channel_id="C08FRRB60Q6",
         color="#2eb886",
@@ -132,6 +137,14 @@ if __name__ == "__main__":
         text="decision: HOLD",
         statistics=statistics,
     )
+    # slackbot.post_attachment(
+    #     channel_id="C08FRRB60Q6",
+    #     color="#ea602e",
+    #     thread_ts="1722946045.578359",
+    #     title="453810.KS",
+    #     # text="decision: HOLD",
+    #     statistics=statistics,
+    # )
     # slackbot.post_file(
     #     file_path="/Users/limdohoon/PycharmProjects/auto-trade/test.png",
     #     filename="test_file",

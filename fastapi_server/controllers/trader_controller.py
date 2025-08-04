@@ -66,8 +66,15 @@ async def prophet(request: Request, prophet: Prophet):
     channel_id = os.getenv("DAILY_REPORT_CHANNEL")
     for stock_symbol, prophecy_dict in prophecies.items():
         fig_save_path = prophecy_dict.pop("fig_save_path", None)
-        text = f"{stock_symbol} - [변화율]: {prophecy_dict['diff_rate']} / [금일 종가]: {prophecy_dict['last_price']}"
-        response = slack_bot.post_message(channel_id=channel_id, text=text)
+
+        diff_rate = prophecy_dict["diff_rate"]
+        color = "#ea602e" if diff_rate >= 0 else "#0660f2"
+        last_price = prophecy_dict["last_price"]
+        statistics = {"변화율": diff_rate, "금일 종가": last_price}
+
+        response = slack_bot.post_attachment(
+            channel_id=channel_id, color=color, title=stock_symbol, statistics=statistics
+        )
 
         thread_ts = response["ts"]
         channel_id = response["channel"]
