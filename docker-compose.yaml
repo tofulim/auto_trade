@@ -196,7 +196,8 @@ services:
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     volumes:
-      - ${AIRFLOW_PROJ_DIR:-./airflow}/:/opt/airflow
+      - ${AIRFLOW_PROJ_DIR:-./airflow/airflow.cfg}/:/opt/airflow/airflow.cfg
+      - ${AIRFLOW_PROJ_DIR:-./airflow/airflow.db}/:/opt/airflow/airflow.db
 
   airflow-cli:
     <<: *airflow-common
