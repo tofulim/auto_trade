@@ -185,4 +185,4 @@ cython_debug/
 
 # non-track files
 fastapi_server/database/auto_trade.db
-airflow/logs
+airflow/logs/*

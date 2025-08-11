@@ -87,6 +87,8 @@ x-airflow-common:
   volumes:
     - ${AIRFLOW_PROJ_DIR:-./airflow}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-./shared}/:/shared
+    - ${AIRFLOW_PROJ_DIR:-./airflow/airflow.cfg}/:/opt/airflow/airflow.cfg
+    - ${AIRFLOW_PROJ_DIR:-./airflow/airflow.db}/:/opt/airflow/airflow.db
   user: "0:0"
 
 services:
@@ -195,9 +197,9 @@ services:
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
       _PIP_ADDITIONAL_REQUIREMENTS: ''
-    volumes:
-      - ${AIRFLOW_PROJ_DIR:-./airflow/airflow.cfg}/:/opt/airflow/airflow.cfg
-      - ${AIRFLOW_PROJ_DIR:-./airflow/airflow.db}/:/opt/airflow/airflow.db
+    # volumes:
+    #   - ${AIRFLOW_PROJ_DIR:-./airflow/airflow.cfg}/:/opt/airflow/airflow.cfg
+    #   - ${AIRFLOW_PROJ_DIR:-./airflow/airflow.db}/:/opt/airflow/airflow.db
 
   airflow-cli:
     <<: *airflow-common
