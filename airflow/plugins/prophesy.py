@@ -150,6 +150,7 @@ def execute_decisions(**kwargs):
                         }
                     ),
                 )
+                result = result.json()
 
                 # 구매는 다음 DAG에서 수행하므로 distribute DAG에서는 예약금과 order_status를 변경한다
                 update_dict = {"reserved_budget": ord_qty * last_price, "order_status": "O"}
@@ -168,11 +169,12 @@ def execute_decisions(**kwargs):
                     url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/trader/sell',
                     data=json.dumps({"stock_symbol": stock_symbol, "ord_qty": ord_qty, "ord_price": last_price}),
                 )
+                result = result.json()
 
         else:
             raise ValueError("behavior must one of (STAY | PURCHASE | SELL)")
 
-        logger.info(f"stock_symbol: {stock_symbol} - behavior {behavior}'s result is {result.json()}")
+        logger.info(f"stock_symbol: {stock_symbol} - behavior {behavior}'s result is {result}")
 
 
 def _get_rsvn_orders():
