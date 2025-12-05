@@ -33,7 +33,7 @@ class LLMTradingStrategy:
 
         try:
             genai.configure(api_key=self.api_key)
-            self.model = genai.GenerativeModel("gemini-1.5-flash")
+            self.model = genai.GenerativeModel("gemini-flash-latest")
             self.enabled = True
             logger.info("LLM trading strategy initialized successfully", extra={"endpoint_name": "init"})
         except Exception as e:
