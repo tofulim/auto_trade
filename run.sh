@@ -8,5 +8,6 @@ mkdir shared || true
 
 
 tmux kill-session -t "auto-trade" || true
+docker compose down
 sleep 5  # 강제 대기
 tmux new -d -s "auto-trade" docker compose up --build
