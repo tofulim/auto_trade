@@ -2,7 +2,7 @@
 finance-datareader==0.9.90
 # Install Meta's Prophet. if os is linux install fbprophet else prophet
 # fbprophet==1.1.5
-prophet==1.1.5
+prophet==1.1.6
 statsmodels==0.14.1
 fastapi==0.100
 uvicorn==0.29.0
@@ -18,3 +18,4 @@ yfinance==0.2.61
 curl_cffi==0.10.0
 # LLM Strategy
 google-generativeai==0.8.5
+cmdstanpy==1.2.5
