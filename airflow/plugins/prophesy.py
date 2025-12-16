@@ -77,8 +77,8 @@ def prophesy_portfolio(**kwargs):
                 {
                     "channel_id": channel_id,
                     "color": color,
-                    "title": f"{stock_symbol} Statistics",
-                    "text": f"decision: {behavior}",
+                    "title": f"{stock_symbol} - {behavior}",
+                    "text": f"behavior_reason: {behavior_reason}",
                     "field_dict": statistics,
                 }
             ),
