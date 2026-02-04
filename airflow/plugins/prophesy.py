@@ -377,12 +377,13 @@ def _get_behavior(
     if order_status not in ["N", "F"]:
         behavior = STAY
     else:
-        # LLM이 강한 신호를 주고 confidence가 높으면 우선 고려
+        # LLM이 사용된 경우, 만장일치 전략 적용 (unanimous agreement required)
         if LLM_AVAILABLE and llm_behavior != STAY:
             try:
-                # High confidence LLM decision (>0.7) gets priority
+                # LLM decision requires unanimous agreement with statistics/model
                 confidence = llm_confidence
                 if confidence > 0.7:
+                    # High confidence: require unanimous agreement for PURCHASE/SELL
                     if llm_behavior == PURCHASE and (statisstics_behavior == PURCHASE or model_behavior == PURCHASE):
                         behavior = PURCHASE
                     elif llm_behavior == SELL and (statisstics_behavior == SELL or model_behavior == SELL):
@@ -394,28 +395,42 @@ def _get_behavior(
                     else:
                         behavior = llm_behavior
                 else:
-                    # Lower confidence, use traditional logic
-                    if statisstics_behavior == PURCHASE or model_behavior == PURCHASE:
+                    # Lower confidence: still require unanimous agreement for PURCHASE
+                    if llm_behavior == PURCHASE and (statisstics_behavior == PURCHASE or model_behavior == PURCHASE):
                         behavior = PURCHASE
-                    elif statisstics_behavior == SELL and model_behavior == SELL:
+                    elif llm_behavior == SELL and (statisstics_behavior == SELL or model_behavior == SELL):
                         behavior = SELL
                     else:
                         behavior = STAY
+                        behavior_reason += " | Require unanimous agreement for trading"
             except (ValueError, IndexError):
-                # Fallback to traditional logic if confidence parsing fails
+                # If LLM was attempted but failed, be conservative - require unanimous agreement
+                if llm_behavior == PURCHASE and (statisstics_behavior == PURCHASE or model_behavior == PURCHASE):
+                    behavior = PURCHASE
+                elif llm_behavior == SELL and (statisstics_behavior == SELL or model_behavior == SELL):
+                    behavior = SELL
+                else:
+                    behavior = STAY
+                    behavior_reason += " | Conservative approach: LLM parsing error"
+        else:
+            # Traditional logic when LLM is not available or gives no signal (STAY)
+            # If LLM says STAY, require unanimous agreement from statistics and model for trading
+            if LLM_AVAILABLE and llm_behavior == STAY:
+                # LLM explicitly says STAY, so require both statistics and model to agree for action
+                if statisstics_behavior == PURCHASE and model_behavior == PURCHASE:
+                    behavior = PURCHASE
+                elif statisstics_behavior == SELL and model_behavior == SELL:
+                    behavior = SELL
+                else:
+                    behavior = STAY
+                    behavior_reason += " | LLM says STAY, require both indicators to agree for trading"
+            else:
+                # LLM not available at all, use traditional OR logic
                 if statisstics_behavior == PURCHASE or model_behavior == PURCHASE:
                     behavior = PURCHASE
                 elif statisstics_behavior == SELL and model_behavior == SELL:
                     behavior = SELL
                 else:
                     behavior = STAY
-        else:
-            # Traditional logic when LLM is not available or gives no signal
-            if statisstics_behavior == PURCHASE or model_behavior == PURCHASE:
-                behavior = PURCHASE
-            elif statisstics_behavior == SELL and model_behavior == SELL:
-                behavior = SELL
-            else:
-                behavior = STAY
 
     return behavior, behavior_reason
