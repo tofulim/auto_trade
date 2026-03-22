@@ -41,6 +41,12 @@ class Buy(BaseModel):
     stock_symbol: str
     ord_qty: int
     ord_price: int
+
+
+class RsvnBuy(BaseModel):
+    stock_symbol: str
+    ord_qty: int
+    ord_price: int
     rsvn_ord_end_dt: str
 
 
@@ -129,9 +135,31 @@ async def buy(request: Request, buy: Buy):
     return res
 
 
+@router.post("/rsvn_buy")
+async def rsvn_buy(request: Request, rsvn_buy: RsvnBuy):
+    res = trader.rsvn_stock(
+        stock_code=rsvn_buy.stock_symbol,
+        ord_qty=rsvn_buy.ord_qty,
+        ord_price=rsvn_buy.ord_price,
+        rsvn_ord_end_dt=rsvn_buy.rsvn_ord_end_dt,
+        # 장전 시간외는 전날 종가를 사용하지만 공란으로 비우지말고 0을 넣으라고 하는데 그럼 안되고 일반 예약으로 해야 체결됨.
+        # ord_price=0,
+    )
+
+    text = f"""
+    f"Buy stock {rsvn_buy.dict()} | Status {res['status_code']} | | output {str(res['output'])} | Error {res['error']}"
+    """
+    if res["status_code"] == "200":
+        _ = slack_bot.post_message(channel_id=os.getenv("TRADE_ALARM_CHANNEL"), text=text)
+
+    logger.inform(text, extra={"endpoint_name": request.url.path})
+
+    return res
+
+
 @router.post("/cancel")
 async def cancel(request: Request, ord_orgno: int, orgn_odno: int):
-    res = trader.cancel_request(ord_orgno=str(ord_orgno), orgn_odno=str(orgn_odno))
+    res = trader.cancel_rsvn_request(ord_orgno=str(ord_orgno), orgn_odno=str(orgn_odno))
 
     logger.inform(
         f"Cancel order {ord_orgno} {orgn_odno} | Status {res['status_code']} | Error {res['error']}",
