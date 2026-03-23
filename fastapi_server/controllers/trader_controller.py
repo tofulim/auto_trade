@@ -119,7 +119,7 @@ async def buy(request: Request, buy: Buy):
         stock_code=buy.stock_symbol,
         ord_qty=buy.ord_qty,
         ord_price=buy.ord_price,
-        rsvn_ord_end_dt=buy.rsvn_ord_end_dt,
+        # rsvn_ord_end_dt=buy.rsvn_ord_end_dt,
         # 장전 시간외는 전날 종가를 사용하지만 공란으로 비우지말고 0을 넣으라고 하는데 그럼 안되고 일반 예약으로 해야 체결됨.
         # ord_price=0,
     )
@@ -157,12 +157,15 @@ async def rsvn_buy(request: Request, rsvn_buy: RsvnBuy):
     return res
 
 
-@router.post("/cancel")
-async def cancel(request: Request, ord_orgno: int, orgn_odno: int):
-    res = trader.cancel_rsvn_request(ord_orgno=str(ord_orgno), orgn_odno=str(orgn_odno))
+@router.post("/cancel_fix")
+async def cancel(request: Request, ord_orgno: int, orgn_odno: int, method_code: str = "02", fix_price: str = 0):
+    res = trader.cancel_request(
+        ord_orgno=str(ord_orgno), orgn_odno=str(orgn_odno), method_code=method_code, fix_price=fix_price
+    )
 
+    method_code = "정정" if method_code == "01" else "취소"
     logger.inform(
-        f"Cancel order {ord_orgno} {orgn_odno} | Status {res['status_code']} | Error {res['error']}",
+        f"Cancel order {ord_orgno} {orgn_odno} with method_code {method_code} and fix_price {fix_price} | Status {res['status_code']} | Error {res['error']}",
         extra={"endpoint_name": request.url.path},
     )
 
@@ -211,6 +214,18 @@ async def get_orders(request: Request, order: Order):
 
     logger.inform(
         f"get orders from {order.rsvn_ord_start_dt} - {order.rsvn_ord_end_dt} | Status {res['status_code']} | Error {res['error']}",
+        extra={"endpoint_name": request.url.path},
+    )
+
+    return res
+
+
+@router.post("/inquire_psbl_rvsecncl")
+async def inquire_psbl_rvsecncl(request: Request, inqr_dvsn_1: str, inqr_dvsn_2: str):
+    res = trader.inquire_psbl_rvsecncl(inqr_dvsn_1=inqr_dvsn_1, inqr_dvsn_2=inqr_dvsn_2)
+
+    logger.inform(
+        f"get possible cancel quantity for {inqr_dvsn_1} {inqr_dvsn_2} | Status {res['status_code']} | Error {res['error']}",
         extra={"endpoint_name": request.url.path},
     )
 

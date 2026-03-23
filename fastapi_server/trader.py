@@ -259,10 +259,10 @@ class Trader:
         except Exception as e:
             status_code = "5xx"
             error = str(e)
-        finally:
-            return {"status_code": status_code, "output": output, "error": error}
 
-    def cancel_request(self, ord_orgno: str, orgn_odno: str, method_code: str = "02", fix_price: int = 0):
+        return {"status_code": status_code, "output": output, "error": error}
+
+    def cancel_request(self, ord_orgno: str, orgn_odno: str, method_code: str = "02", fix_price: str = "0"):
         """
         주문당시의 영업점코드와 주문번호를 활용해 요청한 매입/매도 주문을 정정 혹은 취소한다.
         status_code와 에러를 반환한다.
@@ -273,7 +273,7 @@ class Trader:
             ord_orgno (str): 한국거래소전송주문조직번호
             orgn_odno (str): 원주문번호
             method_code (str): 정정취소 구분코드 (01: 정정, 02: 취소)
-            fix_price (int): 정정 단가 (method_code가 01일 때만 유효)
+            fix_price (str): 정정 단가 (method_code가 01일 때만 유효)
 
         Returns:
             status_code (str): 상태 코드, (200 | 4xx | 5xx)
@@ -298,7 +298,7 @@ class Trader:
             # 주문 수량 (0은 전량)
             "ORD_QTY": "0",
             # 주문 단가
-            "ORD_UNPR": fix_price if method_code == "01" else "0",
+            "ORD_UNPR": str(fix_price) if method_code == "01" else "0",
             # 잔량전부주문여부
             "QTY_ALL_ORD_YN": "Y",
         }
