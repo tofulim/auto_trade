@@ -142,6 +142,8 @@ fastapi 서버와 각 airflow scheduler와 webserver는 각각의 tmux 세션에
 - Google Gemini (free tier)를 활용해 경제적 근거와 함께 매매 결정을 제공한다.
 - 기존 Prophet 모델 및 통계 분석과 함께 종합적인 판단을 수행한다.
 - 높은 신뢰도(>0.7)의 AI 분석이 기존 지표와 일치할 때 우선적으로 반영된다.
+<img width="673" height="419" alt="image" src="https://github.com/user-attachments/assets/f1674907-6e9f-4789-bfab-53f2d74d0b6a" />
+
 
 #### 경제적 근거 제공
 - 각 매매 결정에 대한 상세한 경제적 분석과 근거를 제공한다.
