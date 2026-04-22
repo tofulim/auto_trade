@@ -28,6 +28,7 @@ check_order_dag = DAG(
     description="check trade order and apply to db",
     start_date=datetime.datetime(2024, 10, 13, tzinfo=kst),
     schedule_interval="0 19 * * *",
+    catchup=False,
 )
 
 # 주문한 종목이 있다면 status를 확인한다.

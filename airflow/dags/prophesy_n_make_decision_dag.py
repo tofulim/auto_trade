@@ -25,6 +25,7 @@ prophesy_n_make_decision_dag = DAG(
     # 장 종료 후 금일 종가로 내일 장전 시간외 매수로 예약 매수를 걸어 놓는다.
     schedule_interval="0 20 * * *",
     # schedule_interval=None,
+    catchup=False,
 )
 
 check_date = BranchPythonOperator(

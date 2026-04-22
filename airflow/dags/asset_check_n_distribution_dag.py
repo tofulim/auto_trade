@@ -24,6 +24,7 @@ asset_check_n_distribution_dag = DAG(
     start_date=datetime.datetime(2024, 10, 13, tzinfo=kst),
     # 매일 18:00에 실행합니다
     schedule_interval="0 18 * * *",
+    catchup=False,
 )
 
 check_date = BranchPythonOperator(

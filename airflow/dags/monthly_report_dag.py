@@ -17,6 +17,7 @@ monthly_report_dag = DAG(
     start_date=datetime.datetime(2024, 10, 13, tzinfo=kst),
     # 매일 KTC 08:30에 실행합니다.
     schedule_interval="0 20 28 * *",
+    catchup=False,
 )
 
 check_portfolio = BranchPythonOperator(
