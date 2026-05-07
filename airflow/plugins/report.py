@@ -2,10 +2,7 @@ import datetime
 import json
 import os
 
-import matplotlib.pyplot as plt
-import pandas as pd
 import requests
-import yfinance as yf
 from common.logger_config import setup_logger
 from curl_cffi import requests as curl_requests
 
@@ -62,6 +59,17 @@ def check_portfolio(next_task_name: str, **kwargs):
 
 
 def report_monthly(**kwargs):
+    # Import heavy plotting/data libs lazily to keep webserver startup lightweight.
+    os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
+    os.makedirs(os.environ["MPLCONFIGDIR"], exist_ok=True)
+
+    import matplotlib
+    import pandas as pd
+    import yfinance as yf
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
     session = curl_requests.Session(impersonate="chrome")
     # 1. 앞서 구한 구매한 포트폴리오 rows 가져오기
     purchased_portfolio_rows = kwargs["task_instance"].xcom_pull(key="purchased_portfolio_rows")
@@ -95,6 +103,7 @@ def report_monthly(**kwargs):
         save_path = f"/shared/reports/{datetime.datetime.now().year}_{datetime.datetime.now().month}_{ticker}.png"
         ensure_directory_exists(save_path)
         plt.savefig(save_path)
+        plt.close()
 
         report_summary = f"""종목 {ticker}의 최저 종가는 {min_close}이며, 구매한 가격은 {purchased_close}입니다.\n저점대비 {round((purchased_close - min_close) / min_close * 100, 2)}% 가격입니다."""
 
