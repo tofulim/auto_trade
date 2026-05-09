@@ -501,6 +501,37 @@ class Trader:
 
         return self._request(api, data, headers, method="GET")
 
+    def get_holdings(self):
+        """
+        주식 잔고 및 보유 종목 상세를 가져온다.
+        inquire_balance API의 output1(개별 종목 보유 내역)과 output2(계좌 요약)를 파싱한다.
+
+        Returns:
+            dict:
+                - holdings (list): 보유 종목 리스트 (pdno, prdt_name, hldg_qty, prpr, evlu_amt 등)
+                - total_evlu_amt (int): 총 평가금액 (주식 평가금액 + 예수금)
+                - prvs_rcdl_excc_amt (int): 전일 매매 확정 예수금 (D+2 결제 가능 금액)
+
+        """
+        response_json = self.inquire_balance()
+        output = response_json.get("output", {})
+
+        # output1: 개별 종목 보유 내역
+        holdings = output.get("output1", [])
+        # 보유 수량이 0 이상인 종목만 필터링
+        holdings = [h for h in holdings if int(h.get("hldg_qty", 0)) > 0]
+
+        # output2: 계좌 요약 정보
+        summary = output.get("output2", [{}])[0] if output.get("output2") else {}
+
+        response_json["output"] = {
+            "holdings": holdings,
+            "total_evlu_amt": int(summary.get("tot_evlu_amt", 0)),
+            "prvs_rcdl_excc_amt": int(summary.get("prvs_rcdl_excc_amt", 0)),
+        }
+
+        return response_json
+
     # inquire_balance는 API response지만 get_balance는 직접 남은 예수금을 가져온다.
     def get_balance(self):
         response_json = self.inquire_balance()
