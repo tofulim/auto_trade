@@ -158,7 +158,9 @@ async def rsvn_buy(request: Request, rsvn_buy: RsvnBuy):
 
 
 @router.post("/cancel_fix")
-async def cancel(request: Request, ord_orgno: int, orgn_odno: int, method_code: str = "02", fix_price: str = 0):
+async def cancel(
+    request: Request, ord_orgno: int, orgn_odno: int, method_code: str = "02", fix_price: str = "0"
+):
     res = trader.cancel_request(
         ord_orgno=str(ord_orgno), orgn_odno=str(orgn_odno), method_code=method_code, fix_price=fix_price
     )
