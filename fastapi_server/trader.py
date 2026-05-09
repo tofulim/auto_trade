@@ -138,7 +138,7 @@ class Trader:
     def buy_stock(self, stock_code: str, ord_qty: int, ord_price: int):
         """
         지정가 매수.
-        status_code와 에러를 반환한다.
+        status_code와 주문 결과를 반환한다.
 
         Args:
             stock_code (str): 종목코드
