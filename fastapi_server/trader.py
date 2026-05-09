@@ -135,7 +135,7 @@ class Trader:
 
         return self._request(api, data, headers)
 
-    def buy_stock(self, stock_code: str, ord_qty: int, ord_price: int, rsvn_ord_end_dt: str = ""):
+    def buy_stock(self, stock_code: str, ord_qty: int, ord_price: int):
         """
         지정가 매수.
         status_code와 에러를 반환한다.
@@ -144,8 +144,6 @@ class Trader:
             stock_code (str): 종목코드
             ord_qty (int): 주문 개수
             ord_price (int): 주문 가격
-            rsvn_ord_end_dt (str): 예약주문종료일자
-
         Returns:
             status_code (str): 상태 코드, (200 | 4xx | 5xx)
             output (dict): 주문 결과 KRX_FWDG_ORD_ORGNO(한국거래소 전송주문조직번호), ORNO(주문번호), ORD_TMD(주문시간)을 갖는다.
@@ -168,10 +166,6 @@ class Trader:
             # 주문 단가
             "ORD_UNPR": str(ord_price),
         }
-
-        # 예약주문종료일자 (미기입시 다음날 주문처리되고 예약주문은 종료됨)
-        if len(rsvn_ord_end_dt) != 0:
-            data["RSVN_ORD_END_DT"] = rsvn_ord_end_dt
 
         headers = {
             "Content-Type": "application/json",
