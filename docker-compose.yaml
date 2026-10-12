@@ -103,7 +103,7 @@ services:
       timeout: 20s
       retries: 1
       start_period: 30s
-    restart: no
+    restart: unless-stopped
     depends_on:
       airflow-init:
         condition: service_completed_successfully
@@ -117,7 +117,7 @@ services:
       timeout: 20s
       retries: 1
       start_period: 30s
-    restart: no
+    restart: unless-stopped
     depends_on:
       airflow-init:
         condition: service_completed_successfully
@@ -135,6 +135,7 @@ services:
     # user: "1000:1000"
     ports:
       - "8000:8000"
+    restart: unless-stopped
 
   airflow-init:
     <<: *airflow-common
