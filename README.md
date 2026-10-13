@@ -25,7 +25,7 @@ Auto Trade는 포트폴리오를 구성한 뒤, 이들 종목에 대해 매월 �
 	    - 한국투자증권 API를 활용한 주식 매매, 주문 조회 등의 API
 	    - DB에 저장된 사용자의 자산 정보 API
 	    - slackbot API
-	    - LLM 전략 모듈 (Google Gemini 기반)
+	    - LLM 전략 모듈 (OpenRouter 무료 모델 기반)
 - airflow 파트
     - 자동매매에 필요한 논리적 행동들을 스케쥴링합니다.
 	    - ex1) 매일 한투 API 토큰을 갱신한다.
@@ -60,8 +60,10 @@ KIS_ACCESS_TOKEN={ENTER_YOUR_PRIVATE_INFO}
 # Slack 토큰
 SLACK_BOT_TOKEN={ENTER_YOUR_PRIVATE_INFO}
 
-# Google Gemini API 키 (LLM 전략용 - free tier 사용)
-GEMINI_API_KEY={ENTER_YOUR_PRIVATE_INFO}
+# OpenRouter API 키 (LLM 전략용)
+OPENROUTER_API_KEY={ENTER_YOUR_PRIVATE_INFO}
+# 무료 모델 자동 선택. 특정 무료 모델의 ID(:free)로 변경 가능
+OPENROUTER_MODEL=openrouter/free
 ```
 
 then rename it!
@@ -139,7 +141,7 @@ fastapi 서버와 각 airflow scheduler와 webserver는 각각의 tmux 세션에
 ## Feature Examples
 ### LLM 활용 매매 전략 (새로운 기능)
 #### AI 기반 의사결정
-- Google Gemini (free tier)를 활용해 경제적 근거와 함께 매매 결정을 제공한다.
+- OpenRouter 무료 모델을 활용해 경제적 근거와 함께 매매 결정을 제공한다.
 - 기존 Prophet 모델 및 통계 분석과 함께 종합적인 판단을 수행한다.
 - 높은 신뢰도(>0.7)의 AI 분석이 기존 지표와 일치할 때 우선적으로 반영된다.
 <img width="673" height="419" alt="image" src="https://github.com/user-attachments/assets/f1674907-6e9f-4789-bfab-53f2d74d0b6a" />

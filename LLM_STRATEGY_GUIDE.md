@@ -1,26 +1,36 @@
 # LLM Trading Strategy Configuration Guide
 
-## Google Gemini API Setup
-
-To enable the LLM trading strategy, you need to obtain a free Google Gemini API key:
+## OpenRouter API Setup
 
 1. **Get API Key**:
-   - Go to https://ai.google.dev/
-   - Click "Get API key" and sign in with your Google account
-   - Create a new project if needed
-   - Generate an API key
+   - Sign in at https://openrouter.ai/keys and create an API key.
 
 2. **Add to Environment**:
-   - Copy your API key to `.fastapi.env`:
+   - Add these values to `.fastapi.env` (loaded by the FastAPI container):
+   ```dotenv
+   OPENROUTER_API_KEY=your_api_key_here
+   OPENROUTER_MODEL=openrouter/free
    ```
-   GEMINI_API_KEY=your_api_key_here
+   - Only `OPENROUTER_API_KEY` is required. Missing or blank `OPENROUTER_MODEL` defaults to `openrouter/free`.
+   - `openrouter/free` automatically selects an available free model supporting JSON responses.
+   - To select a specific model, use an available model ID ending in `:free` from https://openrouter.ai/models.
+   - Paid model IDs are rejected and disable the LLM strategy. No paid fallback is configured.
+   - The previous `GEMINI_API_KEY` is no longer used. Airflow calls FastAPI and does not need the OpenRouter key.
+
+3. **Apply Configuration**:
+   - Build or deploy the updated FastAPI image, then recreate the FastAPI container to load the environment:
+   ```sh
+   docker compose up -d --force-recreate fastapi-server
    ```
+   - `GET /v1/llm/health` checks local configuration only; it does not validate the API key or model availability.
 
-3. **Free Tier Limits**:
-   - Gemini 1.5 Flash: 15 requests per minute, 1 million tokens per day
-   - Gemini 1.5 Pro: 2 requests per minute, 50 requests per day
-
-   The system is designed to work within these limits for daily trading decisions.
+4. **Free Model Limits and Failures**:
+   - Free model availability and account rate limits can change. Check the [free router documentation](https://openrouter.ai/docs/guides/routing/routers/free-router) and [current limits](https://openrouter.ai/docs/api/reference/limits).
+   - Requests have a 60-second timeout. Authentication errors, rate limits, unavailable models, and empty responses return HOLD with confidence 0.0 through the existing failure path.
+   - Run the mocked provider tests without an API key or live trading:
+   ```sh
+   python -m unittest discover -s tests -v
+   ```
 
 ## How It Works
 
