@@ -1,5 +1,5 @@
 """
-LLM-based trading strategy using Google Gemini.
+LLM-based trading strategy using OpenRouter free models.
 
 This module provides AI-powered trading decisions with economic reasoning,
 complementing the existing Prophet and statistical analysis strategies.
@@ -9,7 +9,6 @@ import json
 import os
 from typing import Dict, Tuple
 
-import google.generativeai as genai
 import yfinance as yf
 from curl_cffi import requests as curl_requests
 from utils import setup_logger
@@ -19,26 +18,30 @@ logger = setup_logger(__name__)
 
 class LLMTradingStrategy:
     """
-    LLM-based trading strategy using Google Gemini for generating
+    LLM-based trading strategy using OpenRouter for generating
     trading decisions with economic reasoning.
     """
 
     def __init__(self):
         """Initialize the LLM trading strategy."""
-        self.api_key = os.getenv("GEMINI_API_KEY")
+        self.enabled = False
+        self.api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+        self.model = os.getenv("OPENROUTER_MODEL", "").strip() or "openrouter/free"
         if not self.api_key:
-            logger.warning("GEMINI_API_KEY not set. LLM strategy will be disabled.", extra={"endpoint_name": "init"})
-            self.enabled = False
+            logger.warning(
+                "OPENROUTER_API_KEY not set. LLM strategy will be disabled.", extra={"endpoint_name": "init"}
+            )
             return
 
-        try:
-            genai.configure(api_key=self.api_key)
-            self.model = genai.GenerativeModel("gemini-flash-latest")
-            self.enabled = True
-            logger.info("LLM trading strategy initialized successfully", extra={"endpoint_name": "init"})
-        except Exception as e:
-            logger.error(f"Failed to initialize LLM strategy: {e}", extra={"endpoint_name": "init"})
-            self.enabled = False
+        if self.model != "openrouter/free" and not self.model.endswith(":free"):
+            logger.warning(
+                "OPENROUTER_MODEL must be openrouter/free or a :free model. LLM strategy will be disabled.",
+                extra={"endpoint_name": "init"},
+            )
+            return
+
+        self.enabled = True
+        logger.info("LLM trading strategy initialized successfully", extra={"endpoint_name": "init"})
 
     def analyze_stock_and_decide(
         self, stock_symbol: str, prophet_diff_rate: float, statistics: Dict, current_price: float, period_days: int = 30
@@ -76,10 +79,10 @@ class LLMTradingStrategy:
             )
 
             # Get LLM response
-            response = self.model.generate_content(prompt)
+            response_text = self._generate_response(prompt)
 
             # Parse LLM response
-            decision, reasoning, confidence = self._parse_llm_response(response.text)
+            decision, reasoning, confidence = self._parse_llm_response(response_text)
 
             logger.info(
                 f"LLM analysis for {stock_symbol}: {decision} (confidence: {confidence})",
@@ -90,6 +93,40 @@ class LLMTradingStrategy:
         except Exception as e:
             logger.error(f"Error in LLM analysis for {stock_symbol}: {e}", extra={"endpoint_name": "analyze"})
             return "HOLD", f"LLM analysis failed: {str(e)}", 0.0
+
+    def _generate_response(self, prompt: str) -> str:
+        """무료 모델을 호출하며 OpenRouter에 프로젝트 사용처를 전달한다.
+
+        Args:
+            prompt: 모델에 전달할 분석 프롬프트.
+
+        Returns:
+            모델이 생성한 응답 텍스트.
+        """
+        response = curl_requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://github.com/tofulim/auto_trade",
+                "X-OpenRouter-Title": "GitHub auto-trade",
+            },
+            json={
+                "model": self.model,
+                "messages": [{"role": "user", "content": prompt}],
+                "response_format": {"type": "json_object"},
+                "provider": {"require_parameters": True},
+            },
+            timeout=60,
+        )
+        response.raise_for_status()
+        data = response.json()
+        if "error" in data:
+            raise ValueError("OpenRouter returned an error")
+        content = data["choices"][0]["message"]["content"]
+        if not isinstance(content, str) or not content.strip():
+            raise ValueError("OpenRouter returned empty or invalid content")
+        return content
 
     def _get_market_context(self, stock_symbol: str, period_days: int) -> Dict:
         """Get market context data for analysis."""
