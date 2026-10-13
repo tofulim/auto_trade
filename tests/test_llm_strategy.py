@@ -39,6 +39,8 @@ class OpenRouterStrategyTests(unittest.TestCase):
         args, kwargs = self.post.call_args
         self.assertEqual(args, ("https://openrouter.ai/api/v1/chat/completions",))
         self.assertEqual(kwargs["headers"]["Authorization"], "Bearer test-key")
+        self.assertEqual(kwargs["headers"]["HTTP-Referer"], "https://github.com/tofulim/auto_trade")
+        self.assertEqual(kwargs["headers"]["X-OpenRouter-Title"], "GitHub auto-trade")
         self.assertEqual(kwargs["json"]["model"], "openrouter/free")
         self.assertEqual(kwargs["json"]["response_format"], {"type": "json_object"})
         self.assertTrue(kwargs["json"]["provider"]["require_parameters"])

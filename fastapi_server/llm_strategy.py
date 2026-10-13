@@ -95,10 +95,22 @@ class LLMTradingStrategy:
             return "HOLD", f"LLM analysis failed: {str(e)}", 0.0
 
     def _generate_response(self, prompt: str) -> str:
-        """Call OpenRouter without falling back to paid models."""
+        """무료 모델을 호출하며 OpenRouter에 프로젝트 사용처를 전달한다.
+
+        Args:
+            prompt: 모델에 전달할 분석 프롬프트.
+
+        Returns:
+            모델이 생성한 응답 텍스트.
+        """
         response = curl_requests.post(
             "https://openrouter.ai/api/v1/chat/completions",
-            headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://github.com/tofulim/auto_trade",
+                "X-OpenRouter-Title": "GitHub auto-trade",
+            },
             json={
                 "model": self.model,
                 "messages": [{"role": "user", "content": prompt}],

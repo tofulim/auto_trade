@@ -16,6 +16,7 @@
    - To select a specific model, use an available model ID ending in `:free` from https://openrouter.ai/models.
    - Paid model IDs are rejected and disable the LLM strategy. No paid fallback is configured.
    - The previous `GEMINI_API_KEY` is no longer used. Airflow calls FastAPI and does not need the OpenRouter key.
+   - Requests identify this project as `GitHub auto-trade` using `X-OpenRouter-Title` and `HTTP-Referer: https://github.com/tofulim/auto_trade`. No additional environment variables are needed for app attribution.
 
 3. **Apply Configuration**:
    - Build or deploy the updated FastAPI image, then recreate the FastAPI container to load the environment:
