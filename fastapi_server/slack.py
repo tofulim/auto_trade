@@ -77,6 +77,28 @@ class KISSlackBot:
         except SlackApiError as e:
             logger.error(f"Error posting message: {e}")
 
+    def get_messages(self, channel_id: str, oldest: str = None, limit: int = 100):
+        """채널의 메시지 목록을 가져온다.
+
+        Args:
+            channel_id (str): 채널 ID
+            oldest (str, optional): 이 Unix 타임스탬프 이후의 메시지만 가져온다
+            limit (int): 가져올 메시지 수 (기본값 100)
+
+        Returns:
+            list: 메시지 목록
+        """
+        try:
+            kwargs = {"channel": channel_id, "limit": limit}
+            if oldest:
+                kwargs["oldest"] = oldest
+            result = self.client.conversations_history(**kwargs)
+            return result.get("messages", [])
+
+        except SlackApiError as e:
+            logger.error(f"Error getting messages: {e}")
+            return []
+
     def post_file(self, file_path: str, filename: str, channel_id: str, thread_ts: str = None):
         # ID of the channel you want to send the message to
         file_stream = BytesIO()
