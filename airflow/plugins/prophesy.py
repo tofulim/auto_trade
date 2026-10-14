@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime, timedelta
+from typing import Any
 
 import requests
 import yfinance as yf
@@ -116,9 +117,15 @@ def _get_statistics(stock_symbol: str, n_days: int = 20):
     return statistics
 
 
-def execute_decisions(**kwargs):
-    """결정 수행
-    portfolio 종목들에 대한 prophecies를 받아 매매를 수행한다.
+def execute_decisions(**kwargs: Any) -> None:
+    """포트폴리오 의사결정에 따라 주문하고 예약 접수 성공 시 상태를 갱신한다.
+
+    Args:
+        **kwargs: 의사결정 XCom을 조회할 task_instance가 포함된 Airflow 실행 문맥.
+
+    Raises:
+        RuntimeError: 예약매수 접수가 거절된 경우.
+        requests.HTTPError: 예약매수 요청 또는 상태 갱신의 HTTP 응답이 실패한 경우.
     """
     # 0. 예약 주문 목록을 준비해놓는다. (예약 주문이 존재하는지 확인하고 존재한다면 취소하기 위함)
     rsvn_orders = _get_rsvn_orders()
@@ -140,7 +147,7 @@ def execute_decisions(**kwargs):
                 check_rsvn_order_n_cancel(rsvn_orders=rsvn_orders, stock_symbol=stock_symbol)
 
                 result = requests.post(
-                    url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/trader/buy',
+                    url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/trader/rsvn_buy',
                     data=json.dumps(
                         {
                             "stock_symbol": stock_symbol,
@@ -150,15 +157,19 @@ def execute_decisions(**kwargs):
                         }
                     ),
                 )
+                result.raise_for_status()
                 result = result.json()
+                if result["status_code"] != "200":
+                    raise RuntimeError(f"예약매수 접수 실패: {stock_symbol} - {result['error']}")
 
-                # 구매는 다음 DAG에서 수행하므로 distribute DAG에서는 예약금과 order_status를 변경한다
+                # 체결 전에는 예약 접수에 성공한 금액과 주문 대기 상태만 기록한다.
                 update_dict = {"reserved_budget": ord_qty * last_price, "order_status": "O"}
 
                 response = requests.put(
                     url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/put_fields?stock_symbol={stock_symbol}',
                     data=json.dumps(update_dict),
                 )
+                response.raise_for_status()
                 logger.info(
                     f"stock_symbol: {stock_symbol} - behavior {behavior}'s result has saved at db with {response.json()}"
                 )
