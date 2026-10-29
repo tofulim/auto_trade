@@ -108,7 +108,7 @@ def distribute_asset(**kwargs):
         ratio = float(candidate_portfolio_row["ratio"])
 
         # distribute DAG에서는 매월 예수금 이체되면 분배한다. 구매 상태와 상관없이 month_budget와 상태를 초기화해준다.
-        update_dict = {"month_budget": balance * ratio, "month_purchase_flag": False, "order_status": "N"}
+        update_dict = {"month_budget": balance * ratio, "month_purchase_flag": False, "order_status": "NOT_ORDERED"}
 
         response = requests.put(
             url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/put_fields?stock_symbol={stock_symbol}',

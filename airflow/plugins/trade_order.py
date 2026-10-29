@@ -7,6 +7,15 @@ from common.logger_config import setup_logger
 
 logger = setup_logger(__name__)
 
+ORDER_STATUS_LABELS = {
+    "NOT_ORDERED": "주문 없음",
+    "RESERVATION_ACCEPTED": "예약 주문 접수 완료",
+    "UNPROCESSED": "미처리",
+    "PROCESSED": "주문 처리 완료",
+    "RESULT_PENDING": "처리 결과 확인 대기",
+    "PROCESSING_ERROR": "주문 결과 처리 중 오류",
+}
+
 
 def get_portfolio_rows():
     # 1. db에서 Portfolio table을 가져온다.
@@ -31,7 +40,9 @@ def check_order_exist(next_task_name: str, **kwargs):
     portfolio_rows = get_portfolio_rows()
 
     # 매매 신청한 종목들을 구한다.
-    candidate_portfolio_rows = list(filter(lambda row: row["order_status"] in ["O", "W"], portfolio_rows))
+    candidate_portfolio_rows = list(
+        filter(lambda row: row["order_status"] in ["RESERVATION_ACCEPTED", "RESULT_PENDING", "O", "W"], portfolio_rows)
+    )
 
     if len(candidate_portfolio_rows) > 0:
         kwargs["task_instance"].xcom_push(key="candidate_portfolio_rows", value=candidate_portfolio_rows)
@@ -81,7 +92,7 @@ def change_status(**kwargs):
         if pdno not in pdno2budget:
             continue
 
-        order_status, update_dict = "E", {}
+        order_status, update_dict = "PROCESSING_ERROR", {}
         try:
             # 종목 한글명
             kor_item_shtn_name = rsvn_order["kor_item_shtn_name"]
@@ -96,11 +107,11 @@ def change_status(**kwargs):
             ord_dvsn_name = rsvn_order["ord_dvsn_name"]
 
             if prcs_rslt == "미처리":
-                order_status = "F"
+                order_status = "UNPROCESSED"
                 update_dict.update({"order_status": order_status})
             # 정상 처리된 경우
             elif prcs_rslt == "처리":
-                order_status = "S"
+                order_status = "PROCESSED"
                 update_dict.update(
                     {
                         "month_purchase_flag": True,
@@ -111,11 +122,11 @@ def change_status(**kwargs):
                 )
             # 그 외 뭔가 잘못됐거나 처리 대기 케이스
             else:
-                order_status = "W"
+                order_status = "RESULT_PENDING"
                 update_dict.update({"order_status": order_status})
 
             logger.info(
-                f"종목 {pdno}({kor_item_shtn_name})의 {sll_buy_dvsn_cd_str} {ord_dvsn_name}는 {prcs_rslt}되었습니다. order_status: {order_status} (총액 {tot_ccld_amt})"
+                f"종목 {pdno}({kor_item_shtn_name})의 {sll_buy_dvsn_cd_str} {ord_dvsn_name}는 {prcs_rslt}되었습니다. 주문 상태: {ORDER_STATUS_LABELS[order_status]} (총액 {tot_ccld_amt})"
             )
 
             requests.put(
@@ -125,9 +136,11 @@ def change_status(**kwargs):
 
         except Exception as e:
             logger.info(f"종목 {pdno}을 처리하던 중 에러 발생 {e}")
-            order_status = "E"
+            order_status = "PROCESSING_ERROR"
         finally:
-            input_text = f"종목 {pdno}는 현재 {order_status} 상태입니다."
+            input_text = f"종목 {pdno}: {ORDER_STATUS_LABELS[order_status]}"
+            if order_status == "PROCESSING_ERROR":
+                input_text += " (주문 실패 여부는 별도 확인이 필요합니다.)"
             channel_id = os.getenv("TRADE_ALARM_CHANNEL")
             requests.post(
                 url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/slackbot/send_message',
