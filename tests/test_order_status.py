@@ -11,11 +11,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "fastapi_server"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "airflow" / "plugins"))
 
 import asset_update  # noqa: E402
+import entity.portfolio as portfolio_entity  # noqa: E402
 import prophesy  # noqa: E402
 import trade_order  # noqa: E402
 from database.database import Database  # noqa: E402
-from entity.portfolio import LEGACY_ORDER_STATUSES, Portfolio, PortfolioBase  # noqa: E402
-from repository.portfolio_repository_service import PortfolioRepositoryService  # noqa: E402
+from entity.portfolio import Portfolio, PortfolioBase  # noqa: E402
+from repository import portfolio_repository_service  # noqa: E402
 
 
 class OrderStatusStorageTests(unittest.TestCase):
@@ -28,12 +29,12 @@ class OrderStatusStorageTests(unittest.TestCase):
         self.path = str(Path(directory.name) / "test.db")
         self.db = Database(self.path)
         self.addCleanup(self.db.engine.dispose)
-        self.repository = PortfolioRepositoryService(self.db)
+        self.repository = portfolio_repository_service.PortfolioRepositoryService(self.db)
 
     def test_startup_migrates_once_without_changing_other_fields(self) -> None:
         """기존 코드만 변환하고 재시작 시 새 값과 다른 필드를 보존한다."""
         with Session(self.db.engine) as session:
-            for status in (*LEGACY_ORDER_STATUSES, "PROCESSED"):
+            for status in (*portfolio_entity.LEGACY_ORDER_STATUSES, "PROCESSED"):
                 session.add(Portfolio(stock_symbol=status, ratio=0.5, order_status=status, month_budget=1000))
             session.commit()
             before = {row.stock_symbol: row.dict() for row in session.exec(select(Portfolio)).all()}
@@ -43,13 +44,15 @@ class OrderStatusStorageTests(unittest.TestCase):
             with Session(migrated.engine) as session:
                 for row in session.exec(select(Portfolio)).all():
                     expected = dict(before[row.stock_symbol])
-                    expected["order_status"] = LEGACY_ORDER_STATUSES.get(row.stock_symbol, row.stock_symbol)
+                    expected["order_status"] = portfolio_entity.LEGACY_ORDER_STATUSES.get(
+                        row.stock_symbol, row.stock_symbol
+                    )
                     self.assertEqual(row.dict(), expected)
             migrated.engine.dispose()
 
     def test_repository_normalizes_legacy_writes(self) -> None:
         """생성·전체 수정·부분 수정 모두 새 단어를 저장한다."""
-        for legacy, status in LEGACY_ORDER_STATUSES.items():
+        for legacy, status in portfolio_entity.LEGACY_ORDER_STATUSES.items():
             with self.subTest(status=status):
                 self.repository.add(Portfolio(stock_symbol=legacy, ratio=0.5, order_status=legacy))
                 self.assertEqual(self.repository.get([legacy])[0]["order_status"], status)
@@ -133,7 +136,7 @@ class OrderStatusNotificationTests(unittest.TestCase):
 
     def test_purchase_eligibility_is_unchanged(self) -> None:
         """기존 코드와 새 단어 모두 주문 전·미처리 상태에서만 매수한다."""
-        for legacy, status in LEGACY_ORDER_STATUSES.items():
+        for legacy, status in portfolio_entity.LEGACY_ORDER_STATUSES.items():
             for value in (legacy, status):
                 with self.subTest(status=value):
                     behavior, _ = prophesy._get_behavior(
