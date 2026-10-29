@@ -49,7 +49,7 @@ class TradeOrderTests(unittest.TestCase):
 
     def test_mixed_orders_preserve_candidate_processing(self) -> None:
         """과거 주문이 함께 조회되어도 대상 주문의 S/F/W 처리를 유지한다."""
-        for result, status in (("처리", "S"), ("미처리", "F"), ("대기", "W")):
+        for result, status in (("처리", "PROCESSED"), ("미처리", "UNPROCESSED"), ("대기", "RESULT_PENDING")):
             with self.subTest(result=result):
                 self.task_instance.xcom_pull.side_effect = [self.orders, self.candidates]
                 self.orders[:] = [
@@ -72,13 +72,13 @@ class TradeOrderTests(unittest.TestCase):
                     self.put.call_args.kwargs["url"], "http://api:8000/v1/portfolio/put_fields?stock_symbol=PENDING"
                 )
                 expected = {"order_status": status}
-                if status == "S":
+                if status == "PROCESSED":
                     expected.update({"month_purchase_flag": True, "month_budget": 600, "reserved_budget": 0})
                 self.assertEqual(json.loads(self.put.call_args.kwargs["data"]), expected)
                 self.post.assert_called_once()
                 self.assertEqual(
                     json.loads(self.post.call_args.kwargs["data"]),
-                    {"channel_id": "test", "input_text": f"종목 PENDING는 현재 {status} 상태입니다."},
+                    {"channel_id": "test", "input_text": f"종목 PENDING: {trade_order.ORDER_STATUS_LABELS[status]}"},
                 )
                 self.put.reset_mock()
                 self.post.reset_mock()

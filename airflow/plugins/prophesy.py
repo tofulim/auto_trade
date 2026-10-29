@@ -163,7 +163,7 @@ def execute_decisions(**kwargs: Any) -> None:
                     raise RuntimeError(f"예약매수 접수 실패: {stock_symbol} - {result['error']}")
 
                 # 체결 전에는 예약 접수에 성공한 금액과 주문 대기 상태만 기록한다.
-                update_dict = {"reserved_budget": ord_qty * last_price, "order_status": "O"}
+                update_dict = {"reserved_budget": ord_qty * last_price, "order_status": "RESERVATION_ACCEPTED"}
 
                 response = requests.put(
                     url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/portfolio/put_fields?stock_symbol={stock_symbol}',
@@ -385,7 +385,7 @@ def _get_behavior(
             behavior_reason += " | LLM analysis failed"
 
     # 4. 최종 행동을 결정한다
-    if order_status not in ["N", "F"]:
+    if order_status not in ["NOT_ORDERED", "UNPROCESSED", "N", "F"]:
         behavior = STAY
     else:
         # LLM이 사용된 경우, 만장일치 전략 적용 (unanimous agreement required)

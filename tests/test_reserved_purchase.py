@@ -46,7 +46,10 @@ class ReservedPurchaseTests(unittest.TestCase):
             {"stock_symbol": "TEST", "ord_qty": 10, "ord_price": 100, "rsvn_ord_end_dt": "20261102"},
         )
         self.put.assert_called_once()
-        self.assertEqual(json.loads(self.put.call_args.kwargs["data"]), {"reserved_budget": 1000, "order_status": "O"})
+        self.assertEqual(
+            json.loads(self.put.call_args.kwargs["data"]),
+            {"reserved_budget": 1000, "order_status": "RESERVATION_ACCEPTED"},
+        )
 
     def test_rejected_order_fails_without_updating_state(self) -> None:
         """업무 오류를 발생시켜 Airflow가 성공 처리하지 않게 한다."""

@@ -7,7 +7,7 @@ Reviewer:
 from datetime import datetime, timedelta
 
 from database.database import Database
-from entity.portfolio import Portfolio
+from entity.portfolio import Portfolio, normalize_order_status
 from sqlmodel import Session, select
 
 
@@ -17,6 +17,7 @@ class PortfolioRepositoryService:
 
     def add(self, portfolio: Portfolio):
         with Session(self.db.engine) as session:
+            portfolio.order_status = normalize_order_status(portfolio.order_status)
             session.add(portfolio)
             session.commit()
 
@@ -56,7 +57,7 @@ class PortfolioRepositoryService:
             result.ratio = portfolio.ratio
             result.month_purchase_flag = portfolio.month_purchase_flag
             result.updated_at = portfolio.updated_at
-            result.order_status = portfolio.order_status
+            result.order_status = normalize_order_status(portfolio.order_status)
             # session.add(result)
             session.commit()
 
@@ -64,6 +65,9 @@ class PortfolioRepositoryService:
         with Session(self.db.engine) as session:
             statement = select(Portfolio).where(Portfolio.stock_symbol == stock_symbol)
             result = session.exec(statement).one()
+
+            if "order_status" in update_data:
+                update_data["order_status"] = normalize_order_status(update_data["order_status"])
 
             updated_at = datetime.utcnow() + timedelta(hours=9)
             update_data.update({"updated_at": updated_at})
