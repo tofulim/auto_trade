@@ -78,6 +78,9 @@ def change_status(**kwargs):
         # 종목번호
         pdno = rsvn_order["pdno"]
 
+        if pdno not in pdno2budget:
+            continue
+
         order_status, update_dict = "E", {}
         try:
             # 종목 한글명
