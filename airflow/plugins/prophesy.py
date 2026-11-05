@@ -351,7 +351,7 @@ def _get_behavior(
             llm_response = requests.post(
                 url=f'http://{os.getenv("FASTAPI_SERVER_HOST")}:{os.getenv("FASTAPI_SERVER_PORT")}/v1/llm/analyze',
                 json=llm_request_data,
-                timeout=30,  # 30 second timeout for LLM analysis
+                timeout=240,  # OpenRouter 최대 3회 호출(각 60초)과 재시도 대기 시간을 포함한다.
             )
 
             if llm_response.status_code == 200:
