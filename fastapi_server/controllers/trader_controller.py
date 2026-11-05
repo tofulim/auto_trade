@@ -204,6 +204,28 @@ async def get_balance(request: Request):
     return res
 
 
+@router.post("/get_holdings")
+async def get_holdings(request: Request):
+    """
+    주식 잔고 및 보유 종목 상세를 가져온다.
+    리밸런싱 등에 활용하기 위해 개별 종목 보유 현황과 계좌 평가 금액을 반환한다.
+
+    Returns:
+        dict:
+            - holdings (list): 보유 종목 리스트 (pdno, prdt_name, hldg_qty, prpr, evlu_amt 등)
+            - total_evlu_amt (int): 총 평가금액 (주식 평가금액 + 예수금)
+            - prvs_rcdl_excc_amt (int): 전일 매매 확정 예수금 (D+2 결제 가능 금액)
+    """
+    res = trader.get_holdings()
+
+    logger.inform(
+        f"Current Holdings: {res['output']} | Status {res['status_code']} | Error {res['error']}",
+        extra={"endpoint_name": request.url.path},
+    )
+
+    return res
+
+
 @router.post("/get_orders")
 async def get_orders(request: Request, order: Order):
     res = trader.get_reserved_orders(rsvn_ord_start_dt=order.rsvn_ord_start_dt, rsvn_ord_end_dt=order.rsvn_ord_end_dt)

@@ -1,4 +1,6 @@
 import logging
+import os
+from datetime import datetime, timedelta, timezone
 
 import inject
 from entity.slack_base import SlackAttachment, SlackBase
@@ -34,3 +36,31 @@ async def send_attachment(request: Request, slack_attachment: SlackAttachment):
     logger.inform(slack_attachment.field_dict, extra={"endpoint_name": request.url.path})
 
     return True
+
+
+@router.get("/check_rebalance_request")
+async def check_rebalance_request(request: Request):
+    """
+    오늘 REBALANCE_REQUEST_CHANNEL 채널에 리밸런싱 요청 메시지가 있는지 확인한다.
+    "리밸런싱", "rebalancing", "rebalance" 키워드가 포함된 메시지를 찾는다.
+
+    Returns:
+        dict: {"requested": bool}
+    """
+    channel_id = os.getenv("REBALANCE_REQUEST_CHANNEL")
+
+    # 오늘 자정(KST) 이후의 메시지만 확인
+    KST = timezone(timedelta(hours=9))
+    today_midnight_kst = datetime.now(KST).replace(hour=0, minute=0, second=0, microsecond=0)
+    oldest = str(today_midnight_kst.timestamp())
+
+    messages = slack_bot.get_messages(channel_id=channel_id, oldest=oldest)
+
+    rebalance_keywords = ["리밸런싱", "rebalancing", "rebalance"]
+    requested = any(
+        any(keyword in msg.get("text", "").lower() for keyword in rebalance_keywords) for msg in messages
+    )
+
+    logger.inform(f"Rebalance request check: {requested}", extra={"endpoint_name": request.url.path})
+
+    return {"requested": requested}
