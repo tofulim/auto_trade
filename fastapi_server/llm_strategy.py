@@ -7,10 +7,12 @@ complementing the existing Prophet and statistical analysis strategies.
 
 import json
 import os
+import time
 from typing import Dict, Tuple
 
 import yfinance as yf
 from curl_cffi import requests as curl_requests
+from curl_cffi.requests.exceptions import ConnectionError, HTTPError, Timeout
 from utils import setup_logger
 
 logger = setup_logger(__name__)
@@ -103,23 +105,38 @@ class LLMTradingStrategy:
         Returns:
             모델이 생성한 응답 텍스트.
         """
-        response = curl_requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://github.com/tofulim/auto_trade",
-                "X-OpenRouter-Title": "GitHub auto-trade",
-            },
-            json={
-                "model": self.model,
-                "messages": [{"role": "user", "content": prompt}],
-                "response_format": {"type": "json_object"},
-                "provider": {"require_parameters": True},
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
+        for attempt in range(3):
+            try:
+                response = curl_requests.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": "https://github.com/tofulim/auto_trade",
+                        "X-OpenRouter-Title": "GitHub auto-trade",
+                    },
+                    json={
+                        "model": self.model,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "response_format": {"type": "json_object"},
+                        "provider": {"require_parameters": True},
+                    },
+                    timeout=60,
+                )
+                response.raise_for_status()
+            except (HTTPError, Timeout, ConnectionError) as exc:
+                if attempt == 2:
+                    raise
+                if isinstance(exc, HTTPError) and exc.response.status_code not in (408, 429, 500, 502, 503, 504):
+                    raise
+                delay = 5 * (2**attempt)
+                logger.warning(
+                    f"OpenRouter request failed: {exc}; retry {attempt + 1}/2 in {delay}s",
+                    extra={"endpoint_name": "generate_response"},
+                )
+                time.sleep(delay)
+            else:
+                break
         data = response.json()
         if "error" in data:
             raise ValueError("OpenRouter returned an error")
