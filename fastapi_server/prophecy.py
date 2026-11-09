@@ -6,7 +6,6 @@
 - 증감이 0.5% 이상이면 매수, 0.5% 이하이면 매도를 진행한다.
 """
 
-import os
 from datetime import datetime, timedelta, timezone
 from typing import List
 
@@ -23,10 +22,11 @@ class ProphetModel:
     """
 
     def __init__(self):
-        self.periods = int(os.getenv("PERIOD_DAYS"))
         self.session = requests.Session(impersonate="chrome")
 
-    def __call__(self, stock_rows: List[dict], start_date: str, end_date: str, save_plot: bool = True):
+    def __call__(
+        self, stock_rows: List[dict], start_date: str, end_date: str, save_plot: bool = True, periods: int = 30
+    ):
         """
         주식 데이터를 불러와서 Prophet 모델을 학습시킨다.
 
@@ -34,6 +34,8 @@ class ProphetModel:
             stock_rows (List[dict]): db 포트폴리오 데이터
             start_date (str): 사용할 시작 날짜 ex. '2021-01-01'
             end_date (str): 사용할 종료 날짜 ex. '2021-12-31'
+            save_plot (bool): 예측 그래프 저장 여부.
+            periods (int): 런타임 설정의 예측 기간.
 
         Returns:
             prophecies (dict): 종가 경향 변화율 예측 결과와 마지막 종가를 담은 dict (key: 종목명, value: {변화율, 종가})
@@ -48,9 +50,9 @@ class ProphetModel:
 
             self.model = Prophet()
             self.fit(stock_symbol, start_date, end_date)
-            forecast = self.predict(periods=self.periods)
+            forecast = self.predict(periods=periods)
 
-            diff_rate = self.get_diff_rate(forecast, periods=self.periods)
+            diff_rate = self.get_diff_rate(forecast, periods=periods)
             last_price = self.stock_data["y"][-1]
             prophecies[stock_symbol] = {"diff_rate": diff_rate, "last_price": last_price}
             # 경향 예측 그래프를 저장한다.

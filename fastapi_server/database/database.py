@@ -1,6 +1,8 @@
 # create all이 있는 곳에 table import 문이 있어야 테이블을 자동생성한다.
 from entity.asset import Asset  # noqa
 from entity.portfolio import Portfolio  # noqa
+from entity.take_profit import TakeProfit  # noqa
+from entity.trading_settings import TradingSettings  # noqa
 from sqlmodel import SQLModel, create_engine
 
 
