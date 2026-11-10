@@ -9,7 +9,9 @@ from prophecy import ProphetModel
 from pydantic import BaseModel, Field
 from repository.portfolio_repository_service import PortfolioRepositoryService
 from slack import KISSlackBot
+from take_profit import TakeProfitService
 from trader import Trader
+from trading_settings import TradingSettingsService
 
 router = APIRouter(prefix="/v1/trader", tags=["Trader"])
 
@@ -18,6 +20,7 @@ portfolio_repository_service = inject.instance(PortfolioRepositoryService)
 prophet_model = inject.instance(ProphetModel)
 trader = inject.instance(Trader)
 slack_bot = inject.instance(KISSlackBot)
+take_profit_service = TakeProfitService(db.engine, trader)
 
 
 logger = logging.getLogger("api_logger")
@@ -67,7 +70,10 @@ async def prophet(request: Request, prophet: Prophet):
 
     KST = timezone(timedelta(hours=9))
     end_datetime = datetime.now(KST)
-    prophecies = prophet_model(stock_rows, "2021-01-01", end_datetime.strftime("%Y-%m-%d"))
+    settings = TradingSettingsService(db.engine).get()
+    prophecies = prophet_model(
+        stock_rows, "2021-01-01", end_datetime.strftime("%Y-%m-%d"), periods=settings["period_days"]
+    )
 
     channel_id = os.getenv("DAILY_REPORT_CHANNEL")
     for stock_symbol, prophecy_dict in prophecies.items():
@@ -131,6 +137,26 @@ async def buy(request: Request, buy: Buy):
     logger.inform(text, extra={"endpoint_name": request.url.path})
 
     return res
+
+
+@router.post("/take_profit/check")
+def check_take_profit() -> dict:
+    """당일 종가 수익률을 확인하고 다음 거래일 절반 익절 예약을 접수한다.
+
+    Returns:
+        검사 결과와 새로 접수한 주문.
+    """
+    return take_profit_service.run()
+
+
+@router.get("/take_profit")
+def get_take_profit_states() -> list[dict]:
+    """중복 익절을 막는 접수 및 체결 상태를 반환한다.
+
+    Returns:
+        종목별 익절 상태 목록.
+    """
+    return take_profit_service.get_states()
 
 
 @router.post("/rsvn_buy")

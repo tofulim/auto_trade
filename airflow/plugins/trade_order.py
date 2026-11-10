@@ -77,8 +77,8 @@ def change_status(**kwargs):
     for rsvn_order in rsvn_orders:
         # 종목번호
         pdno = rsvn_order["pdno"]
-
-        if pdno not in pdno2budget:
+        # 익절 예약매도는 별도 상태로 관리하며 월 매수 예산에 반영하지 않는다.
+        if pdno not in pdno2budget or rsvn_order["sll_buy_dvsn_cd"] != "02":
             continue
 
         order_status, update_dict = "E", {}

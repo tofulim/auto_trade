@@ -78,6 +78,7 @@ class LLMTradingStrategy:
                 statistics=statistics,
                 current_price=current_price,
                 market_data=market_data,
+                period_days=period_days,
             )
 
             # Get LLM response
@@ -186,7 +187,13 @@ class LLMTradingStrategy:
             return {"error": str(e)}
 
     def _create_analysis_prompt(
-        self, stock_symbol: str, prophet_diff_rate: float, statistics: Dict, current_price: float, market_data: Dict
+        self,
+        stock_symbol: str,
+        prophet_diff_rate: float,
+        statistics: Dict,
+        current_price: float,
+        market_data: Dict,
+        period_days: int = 30,
     ) -> str:
         """Create comprehensive analysis prompt for LLM."""
 
@@ -202,7 +209,7 @@ class LLMTradingStrategy:
         Current Price: ${current_price:.2f}
 
         TECHNICAL ANALYSIS DATA:
-        - Prophet Model Prediction: {prophet_diff_rate:.2f}% change expected over next 30 days
+        - Prophet Model Prediction: {prophet_diff_rate:.2f}% change expected over next {period_days} days
         - RSI: {statistics.get('rsi', 'N/A')}
         - Moving Averages: 5-day: {statistics.get('ma', {}).get('day5', 'N/A')}, 10-day: {statistics.get('ma', {}).get('day10', 'N/A')}, 20-day: {statistics.get('ma', {}).get('day20', 'N/A')}, 60-day: {statistics.get('ma', {}).get('day60', 'N/A')}
         - Z-Score: {statistics.get('zscore', 'N/A')}

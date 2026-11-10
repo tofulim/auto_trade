@@ -79,17 +79,25 @@ class Trader:
         self.access_token = access_token
         os.environ["KIS_ACCESS_TOKEN"] = access_token
 
-    def rsvn_stock(self, stock_code: str, ord_qty: int, ord_price: int, rsvn_ord_end_dt: str = ""):
+    def rsvn_stock(
+        self,
+        stock_code: str,
+        ord_qty: int,
+        ord_price: int,
+        rsvn_ord_end_dt: str = "",
+        sll_buy_dvsn_cd: str = "02",
+        ord_dvsn_cd: str = "00",
+    ) -> dict:
         """
-        장전 시간외 매수를 통해 전날 종가 기준으로 예약 구매한다.
-        해당 stock의 accum asset이 감당할 수 있을만큼 구매한다.
-        status_code와 에러를 반환한다.
+        다음 거래일의 매수 또는 매도 주문을 예약한다.
 
         Args:
             stock_code (str): 종목코드
             ord_qty (int): 주문 개수
             ord_price (int): 주문 가격
             rsvn_ord_end_dt (str): 예약주문종료일자
+            sll_buy_dvsn_cd (str): 매도(01) 또는 매수(02).
+            ord_dvsn_cd (str): 지정가(00) 또는 시장가(01).
 
         Returns:
             status_code (str): 상태 코드, (200 | 4xx | 5xx)
@@ -97,7 +105,7 @@ class Trader:
             error (str): 에러
 
         """
-        tr_id = os.getenv("RSVN_BUY_TR_ID")
+        tr_id = os.getenv("RSVN_BUY_TR_ID", "CTSC0008U")
         api = "uapi/domestic-stock/v1/trading/order-resv"
 
         data = {
@@ -107,13 +115,13 @@ class Trader:
             # 종목번호
             "PDNO": stock_code,
             # 주문구분 - 지정가(00), 시장가(01), 장전 시간외(05)
-            "ORD_DVSN_CD": "00",
+            "ORD_DVSN_CD": ord_dvsn_cd,
             # 주문 수량
             "ORD_QTY": str(ord_qty),
             # 주문 단가
             "ORD_UNPR": str(ord_price),
             # 매도 매수 구분 코드 (01: 매도 / 02: 매수)
-            "SLL_BUY_DVSN_CD": "02",
+            "SLL_BUY_DVSN_CD": sll_buy_dvsn_cd,
             # 주문대상 잔고 구분코드 10: 현금
             "ORD_OBJT_CBLC_DVSN_CD": "10",
         }
@@ -228,6 +236,8 @@ class Trader:
 
     def _request(self, api: str, data: dict, headers: dict, method: str = "POST"):
         status_code, output, error = "500", {}, None
+        tr_cont = ""
+        response_json = {}
         # 클라이언트 에러 핸들링 (파라미터 오기입, 장미운영날 주문 등)
         try:
             if method == "POST":
@@ -239,6 +249,7 @@ class Trader:
                 response = requests.get(url=f"{self.url_base}:{self.port}/{api}", headers=headers, params=data)
 
             status_code = str(response.status_code)
+            tr_cont = response.headers.get("tr_cont", "")
             response_json = response.json()
 
             # 0 이외의 값은 실패이다.
@@ -254,7 +265,11 @@ class Trader:
             status_code = "5xx"
             error = str(e)
 
-        return {"status_code": status_code, "output": output, "error": error}
+        result = {"status_code": status_code, "output": output, "error": error, "tr_cont": tr_cont}
+        for key in ("ctx_area_fk200", "ctx_area_nk200"):
+            if key in response_json:
+                result[key] = response_json[key]
+        return result
 
     def cancel_request(self, ord_orgno: str, orgn_odno: str, method_code: str = "02", fix_price: str = "0"):
         """
@@ -392,7 +407,71 @@ class Trader:
             "hashkey": self.hashkey(data),
         }
 
+        return self._inquire_pages(api, data, headers)
+
+    def inquire_daily_prices(self, stock_code: str) -> dict:
+        """KRX의 최근 일별 종가를 조회한다.
+
+        Args:
+            stock_code: 종목코드.
+
+        Returns:
+            거래일별 종가와 조회 결과.
+        """
+        api = "uapi/domestic-stock/v1/quotations/inquire-daily-price"
+        data = {
+            "FID_COND_MRKT_DIV_CODE": "J",
+            "FID_INPUT_ISCD": stock_code,
+            "FID_PERIOD_DIV_CODE": "D",
+            "FID_ORG_ADJ_PRC": "0",
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "authorization": f"Bearer {self.access_token}",
+            "appKey": self.app_key,
+            "appSecret": self.app_secret,
+            "tr_id": "FHKST01010400",
+            "custtype": "P",
+        }
         return self._request(api, data, headers, method="GET")
+
+    def _inquire_pages(self, api: str, data: dict, headers: dict, reserved_orders: bool = False) -> dict:
+        """잔고와 주문의 모든 페이지를 모으고 조회 실패를 전달한다.
+
+        Args:
+            api: 조회 API 경로.
+            data: 최초 조회 파라미터.
+            headers: 인증 및 거래 헤더.
+            reserved_orders: 예약주문 응답 형식과 200자리 연속조회 키 사용 여부.
+
+        Returns:
+            전체 잔고 또는 예약주문 목록과 마지막 페이지의 응답.
+
+        Raises:
+            RuntimeError: 연속조회 키가 진행하지 않는 경우.
+        """
+        rows = []
+        seen = set()
+        while True:
+            result = self._request(api, data, headers, method="GET")
+            if result["status_code"] != "200":
+                return result
+            output = result["output"]
+            rows.extend(output if reserved_orders else output["output1"])
+            if result.get("tr_cont", "") not in {"M", "F"}:
+                if reserved_orders:
+                    result["output"] = rows
+                else:
+                    output["output1"] = rows
+                return result
+            size = "200" if reserved_orders else "100"
+            context = result if reserved_orders else output
+            cursor = (context[f"ctx_area_fk{size}"], context[f"ctx_area_nk{size}"])
+            if cursor in seen:
+                raise RuntimeError("증권사 연속조회 키가 반복됩니다.")
+            seen.add(cursor)
+            data.update({f"CTX_AREA_FK{size}": cursor[0], f"CTX_AREA_NK{size}": cursor[1]})
+            headers["tr_cont"] = "N"
 
     def inquire_psbl_rvsecncl(self, inqr_dvsn_1: str, inqr_dvsn_2: str):
         """
@@ -499,7 +578,7 @@ class Trader:
             "hashkey": self.hashkey(data),
         }
 
-        return self._request(api, data, headers, method="GET")
+        return self._inquire_pages(api, data, headers, reserved_orders=True)
 
     # inquire_balance는 API response지만 get_balance는 직접 남은 예수금을 가져온다.
     def get_balance(self):
