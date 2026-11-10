@@ -8,6 +8,7 @@ import yfinance as yf
 from common.calc_business_day import is_ktc_business_day
 from common.logger_config import setup_logger
 from common.statistics import get_moving_averages, get_rsi, get_zscore
+from common.trading_settings import get_trading_settings
 from const import PURCHASE, SELL, STAY
 from curl_cffi import requests as curl_requests
 
@@ -30,6 +31,7 @@ def prophesy_portfolio(**kwargs):
 
     """
     portfolio_behavior_decisions = []
+    settings = get_trading_settings()
 
     # 0. db에서 Portfolio table을 가져온다.
     response = requests.post(
@@ -57,10 +59,11 @@ def prophesy_portfolio(**kwargs):
             diff_rate=diff_rate,
             statistics=statistics,
             order_status=stock_symbol2order_status[stock_symbol],
-            purchase_threshold=float(os.getenv("PURCHASE_THRESHOLD")),
-            sell_threshold=float(os.getenv("SELL_THRESHOLD")),
+            purchase_threshold=settings["purchase_threshold"],
+            sell_threshold=settings["sell_threshold"],
             stock_symbol=stock_symbol_tz,
             current_price=last_price,
+            period_days=settings["period_days"],
         )
         portfolio_behavior_decisions.append(
             # (stock_symbol, behavior, diff_rate, month_budget, last_price)
@@ -289,6 +292,7 @@ def _get_behavior(
     sell_threshold: float,
     stock_symbol: str = None,
     current_price: float = None,
+    period_days: int = 30,
 ):
     """행동 결정
 
@@ -300,6 +304,7 @@ def _get_behavior(
         sell_threshold (float): 매도 기준점
         stock_symbol (str): 주식 종목 심볼 (LLM 분석용)
         current_price (float): 현재 주가 (LLM 분석용)
+        period_days (int): 런타임 설정의 LLM 분석 기간.
 
     Returns:
         behavior (str): const에 정의된 행동 (PURCHASE | SELL | STAY) 중 하나이다.
@@ -345,7 +350,7 @@ def _get_behavior(
                 "prophet_diff_rate": diff_rate,
                 "statistics": statistics,
                 "current_price": current_price,
-                "period_days": 30,
+                "period_days": period_days,
             }
 
             llm_response = requests.post(
