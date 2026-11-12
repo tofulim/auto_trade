@@ -107,6 +107,8 @@ curl -X PUT http://localhost:8000/v1/settings/trading \
 설정과 익절 기록은 기존 `DATABASE_PATH`의 SQLite에 저장됩니다. 컨테이너 재생성 시에도
 기존 `/database` 볼륨을 유지하면 보존됩니다. 이 기능을 처음 배포할 때는 FastAPI와 Airflow 이미지를
 한 번 갱신해야 하지만, 이후 숫자 변경은 빌드나 재시작 없이 다음 실행부터 반영됩니다.
+`/database` 볼륨에는 예전 `database.py`도 남아 있을 수 있으므로, 테이블 모델은 볼륨 외부의
+`entity` 패키지에서 등록합니다. 서버 시작 시 기존 자산·포트폴리오 데이터는 유지하면서 누락된 테이블만 생성합니다.
 환경변수는 FastAPI 설정 테이블을 **최초 생성할 때만** 초기값으로 사용합니다.
 기존 Airflow의 `PURCHASE_THRESHOLD`, `SELL_THRESHOLD`는 더 이상 읽지 않으므로,
 운영값이 위 기본값과 다르면 배포 시 API로 설정하거나 최초 FastAPI 환경변수에 옮기세요.
